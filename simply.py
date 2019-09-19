@@ -39,9 +39,9 @@ def trade(conn, ticker, shares, price, date, action):
         '__DATE__')
         """
     sql = sql_template.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
-    if action == "SELL":
+    if action == ActionType.SELL:
         sql = sql.replace('__SHARES__', str(shares * -1))
-    elif action == "BUY":
+    elif action == ActionType.BUY:
         sql = sql.replace('__SHARES__', str(shares))
 
     sql = sql.replace('__ACTION__', str(action)) 
@@ -80,11 +80,28 @@ def get_inventory(conn, ticker):
     else:
         return "0"
 
+def print_not_enough_cash_screen(cash_bal, tran_amount):
+            print("")
+            print(f"You do not have enough cash ${cash_bal:,} for this transaction ${tran_amount:,}")
+            print("")
+            print("[ENTER]")
+            input()
+
+def print_trade_preview(ticker, action, price, shares, tran_amount):
+    s = f"\n\rTrade {ticker} {action} {shares}@{price} = " + f"${tran_amount:,}"
+    print(s)
 
 def transaction(conn, ticker, shares, price, action):
     date = datetime.now().strftime("%Y-%m-%d")
-    s = f"Trade {ticker} {action} {shares}@{price} = " + str(round(shares * price, 2))
-    print(s)
+    tran_amount = round(shares * price, 2)
+    print_trade_preview(ticker, action, price, shares, tran_amount)
+
+    if action == ActionType.BUY:
+        cash_bal = get_cash_balance(conn)
+        if cash_bal - (shares * price) < 0:
+            print_not_enough_cash_screen(cash_bal, tran_amount)
+            return False
+
     ans = input("are you sure?")
     if 'y' in ans:
         try:
@@ -100,9 +117,9 @@ def transaction(conn, ticker, shares, price, action):
             print("You do not have enough shares, you only have=", get_inventory(conn, ticker))
 
 def parse_action(action):
-    if 'buy' in action.lower():
+    if 'b' in action.lower():
         action = ActionType.BUY
-    elif 'sell' in action.lower():
+    elif 's' in action.lower():
         action = ActionType.SELL
     else:
         raise UnknownActionType
@@ -134,9 +151,9 @@ def trade_screen(conn):
             create_ticker(conn, ticker)
         else:
             exit()
-    shares = input('please enter shares ')
+    shares = int(input('please enter shares '))
     action = input('please enter buy or sell ')
-    price = input('please enter price ')
+    price = int(input('please enter price '))
     # shares = 200
     # action = ActionType.BUY
     # action = ActionType.SELL
