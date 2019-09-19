@@ -101,7 +101,7 @@ def transaction(conn, ticker, shares, price, action):
 
     if action == ActionType.BUY:
         cash_bal = get_cash_balance(conn)
-        if cash_bal - (shares * price) < 0:
+        if float(cash_bal) - (shares * price) < 0:
             screens.print_not_enough_cash_screen(cash_bal, tran_amount)
             return False
     elif action == ActionType.SELL:

@@ -2,7 +2,7 @@
 
 def print_not_enough_cash_screen(cash_bal, tran_amount):
             print("")
-            print(f"You do not have enough cash ${cash_bal:,} for this transaction ${tran_amount:,}")
+            print(f"You do not have enough cash ${float(cash_bal):,} for this transaction ${tran_amount:,}")
             print("")
             print("[ENTER]")
             input()
