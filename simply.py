@@ -1,6 +1,8 @@
 import sqlite3
 from datetime import datetime
 import os
+# from com import print_screens
+from com.print_screens import screens
 
 
 class NoInventoryError(Exception):
@@ -80,26 +82,32 @@ def get_inventory(conn, ticker):
     else:
         return "0"
 
-def print_not_enough_cash_screen(cash_bal, tran_amount):
-            print("")
-            print(f"You do not have enough cash ${cash_bal:,} for this transaction ${tran_amount:,}")
-            print("")
-            print("[ENTER]")
-            input()
 
-def print_trade_preview(ticker, action, price, shares, tran_amount):
-    s = f"\n\rTrade {ticker} {action} {shares}@{price} = " + f"${tran_amount:,}"
-    print(s)
+def get_share_balance(conn, ticker):
+    sql_template = "SELECT SUM(shares) FROM transactions WHERE ticker_id = '__TICKER_ID__'"
+    sql = sql_template.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
+    cursor = conn.execute(sql)
+    result = cursor.fetchone()
+    if result[0] is None:
+        return 0
+    else:
+        return result[0]
+    
 
 def transaction(conn, ticker, shares, price, action):
     date = datetime.now().strftime("%Y-%m-%d")
     tran_amount = round(shares * price, 2)
-    print_trade_preview(ticker, action, price, shares, tran_amount)
+    screens.print_trade_preview(ticker, action, price, shares, tran_amount)
 
     if action == ActionType.BUY:
         cash_bal = get_cash_balance(conn)
         if cash_bal - (shares * price) < 0:
-            print_not_enough_cash_screen(cash_bal, tran_amount)
+            screens.print_not_enough_cash_screen(cash_bal, tran_amount)
+            return False
+    elif action == ActionType.SELL:
+        shares_bal = get_share_balance(conn, ticker)
+        if shares_bal - shares < 0:
+            screens.print_not_enough_shares_screen(shares_bal, shares, ticker)
             return False
 
     ans = input("are you sure?")
@@ -203,22 +211,7 @@ def get_cash_balance(conn):
     else:
         return res[0]
 
-def print_options_screen():
-    print("Cash Balance:" + str(get_cash_balance(conn)))
-    print("Cash Market Value of Securities:")
-    print("")
-    print(" Would you like to:")
-    print("")
-    print("(1) Trade ")
-    print("(2) Deposit Money")
-    print("(3) Get Reports")
-    print("(4) Exit ")
 
-def print_banner():
-    print()
-    print(" " + ("*" * 40))
-    print(""" **  Welcome to simply trade v.05      **  """)
-    print(" " + ("*" * 40))
 
 if __name__ == '__main__':
     conf = {'db_location':"trade.db",
@@ -227,8 +220,8 @@ if __name__ == '__main__':
     cash_balance = get_cash_balance(conn)
 
     while(True):
-        print_banner()
-        print_options_screen()
+        screens.print_banner()
+        screens.print_options_screen(get_cash_balance(conn))
         ans = input()
         if ans == "1":
             trade_screen(conn)
