@@ -214,7 +214,7 @@ def get_cash_balance(conn):
 
 
 if __name__ == '__main__':
-    conf = {'db_location':"trade.db",
+    conf = {'db_location':"db/trade.db",
     'log_location':'logs'}
     conn = create_connection(conf)
     cash_balance = get_cash_balance(conn)
