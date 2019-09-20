@@ -114,6 +114,7 @@ def transaction(conn, ticker, shares, price, action):
     tran_amount = round(shares * price, 2)
     screens.print_trade_preview(ticker, action, price, shares, tran_amount)
     if not trade_validation(conn, action, shares, price, ticker, tran_amount):
+        screens.clear_screen()
         return False
     ans = input("are you sure?")
     if 'y' in ans:
@@ -126,8 +127,8 @@ def transaction(conn, ticker, shares, price, action):
                 return True
             else:
                 raise NotEnoughSharesException
-        except NotEnoughSharesException:
-            print("You do not have enough shares, you only have=", get_inventory(conn, ticker))
+        except Exception:
+            print("ERROR")
 
 def parse_action(action):
     if 'b' in action.lower():

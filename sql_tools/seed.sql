@@ -1,7 +1,8 @@
 drop table if exists tickers;
 drop table if exists transactions;
-drop table if exists inventory;
 drop table if exists cash_balance;
+drop table if exists price_types;
+drop table if exists prices;
 
 
 create table tickers (
@@ -19,11 +20,6 @@ create table transactions (
     trade_date DATE
 );
 
-create table inventory (
-    id NUMBER not null primary key,
-    ticker_id NUMBER,
-    shares NUMBER
-);
 
 create table cash_balance (
     id integer not null primary key AUTOINCREMENT,
@@ -31,6 +27,23 @@ create table cash_balance (
     transaction_id NUMBER,
     amount NUMBER,
     date Date
-)
+);
 
+create table price_types(
+    id integer not null primary key AUTOINCREMENT,
+    name varchar(30)
+);
+
+INSERT INTO price_types (name) VALUES ('FROM_SALE');
+INSERT INTO price_types (name) VALUES ('EOD');
+INSERT INTO price_types (name) VALUES ('INTRA_DAY');
+
+create table prices (
+    id integer not null primary key AUTOINCREMENT,
+    ticker_id NUMBER,
+    price_date DATE,
+    type VARCHAR(30),
+    transaction_id NUMBER,
+    modified_date DATE
+);
 
