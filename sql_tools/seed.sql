@@ -17,7 +17,7 @@ create table transactions (
     shares NUMBER,
     action VARCHAR(30),
     price NUMBER,
-    trade_date DATE
+    trade_date DATE DEFAULT (DATETIME('now', 'localtime'))
 );
 
 

@@ -40,7 +40,7 @@ def get_transaction_id(conn, ticker, shares, price, date, action):
         shares = __SHARES__ and
         action = '__ACTION__' and
         price = __PRICE__ and
-        trade_date = '__DATE__'
+        date(trade_date) = '__DATE__'
     """
     sql_id = sql_transaction_id_template.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
     sql_id = sql_id.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
@@ -59,12 +59,11 @@ def get_transaction_id(conn, ticker, shares, price, date, action):
 
 def trade(conn, ticker, shares, price, date, action):
     sql_template = """
-        INSERT INTO transactions (ticker_id, shares, action, price, trade_date) VALUES (
+        INSERT INTO transactions (ticker_id, shares, action, price) VALUES (
         '__TICKER_ID__',
         __SHARES__,
         '__ACTION__',
-        __PRICE__,
-        '__DATE__')
+        __PRICE__)
         """
 
 
@@ -76,7 +75,7 @@ def trade(conn, ticker, shares, price, date, action):
 
     sql = sql.replace('__ACTION__', str(action)) 
     sql = sql.replace('__PRICE__', str(price))
-    sql = sql.replace('__DATE__', str(date))
+    # sql = sql.replace('__DATE__', str(date))
     conn.execute(sql)
     conn.commit()
 
@@ -157,18 +156,15 @@ def transaction(conn, ticker, shares, price, action):
     if not trade_validation(conn, action, shares, price, ticker, tran_amount):
         screens.clear_screen()
         return False
-    ans = input("are you sure?")
-    if 'y' in ans:
-        if action == ActionType.BUY:
-            id = trade(conn, ticker, shares, price, date, action)
-            return True
-        elif action == ActionType.SELL and we_have_inventory_for_sale(conn, ticker, shares):
-            id = trade(conn, ticker, shares, price, date, action)
-            return True
-        else:
-            raise NotEnoughSharesException
-        # except Exception:
-            # print("ERROR")
+    while(True):
+        ans = input("are you sure?")
+        if 'y' in ans:
+            if action == ActionType.BUY:
+                id = trade(conn, ticker, shares, price, date, action)
+                return True
+            elif action == ActionType.SELL and we_have_inventory_for_sale(conn, ticker, shares):
+                id = trade(conn, ticker, shares, price, date, action)
+                return True
 
 def parse_action(action):
     if 'b' in action.lower():
@@ -281,7 +277,7 @@ def format_activity(row):
     print(s)
 
 def get_todays_activity(conn):
-    sql_template = "SELECT * FROM transactions where trade_date = '__TRADE_DATE__'"
+    sql_template = "SELECT * FROM transactions where date(trade_date) = '__TRADE_DATE__'"
     sql = sql_template.replace('__TRADE_DATE__', datetime.now().strftime("%Y-%m-%d"))
     results = conn.execute(sql)
     screens.clear_screen()
