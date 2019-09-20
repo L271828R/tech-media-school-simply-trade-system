@@ -31,6 +31,32 @@ def get_ticker_id(conn, ticker):
         raise Exception("This ticker has been deactivated")
     return str(result[0])
 
+
+
+def get_transaction_id(conn, ticker, shares, price, date, action):
+    sql_transaction_id_template = """
+     SELECT max(id) FROM transactions WHERE 
+        ticker_id = '__TICKER_ID__' and
+        shares = __SHARES__ and
+        action = '__ACTION__' and
+        price = __PRICE__ and
+        trade_date = '__DATE__'
+    """
+    sql_id = sql_transaction_id_template.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
+    sql_id = sql_id.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
+    
+    if action == ActionType.SELL:
+        sql_id = sql_id.replace('__SHARES__', str(shares * -1))
+    elif action == ActionType.BUY:
+        sql_id = sql_id.replace('__SHARES__', str(shares))
+
+    sql_id = sql_id.replace('__ACTION__', str(action))
+    sql_id = sql_id.replace('__PRICE__', str(price))
+    sql_id = sql_id.replace('__DATE__', str(date))
+    cursor = conn.execute(sql_id)
+    result = cursor.fetchone()
+    return result[0]
+
 def trade(conn, ticker, shares, price, date, action):
     sql_template = """
         INSERT INTO transactions (ticker_id, shares, action, price, trade_date) VALUES (
@@ -40,6 +66,8 @@ def trade(conn, ticker, shares, price, date, action):
         __PRICE__,
         '__DATE__')
         """
+
+
     sql = sql_template.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
     if action == ActionType.SELL:
         sql = sql.replace('__SHARES__', str(shares * -1))
@@ -51,6 +79,14 @@ def trade(conn, ticker, shares, price, date, action):
     sql = sql.replace('__DATE__', str(date))
     conn.execute(sql)
     conn.commit()
+
+    return get_transaction_id(conn, ticker, shares, price, date, action)
+
+
+
+    
+
+
 
 def we_have_inventory_for_sale(conn, ticker, shares):
     sql_template = """
@@ -108,6 +144,11 @@ def trade_validation(conn, action, shares, price, ticker, tran_amount):
         else:
             return True
 
+def add_to_pricing_table(conn, action, price, ticker, transaction_id):
+    sql_template = "INSERT INTO prices (ticker_id, price_date, type, transaction_id)"
+    if action == ActionType.BUY:
+        pass
+
 
 def transaction(conn, ticker, shares, price, action):
     date = datetime.now().strftime("%Y-%m-%d")
@@ -118,17 +159,16 @@ def transaction(conn, ticker, shares, price, action):
         return False
     ans = input("are you sure?")
     if 'y' in ans:
-        try:
-            if action == ActionType.BUY:
-                trade(conn, ticker, shares, price, date, action)
-                return True
-            elif action == ActionType.SELL and we_have_inventory_for_sale(conn, ticker, shares):
-                trade(conn, ticker, shares, price, date, action)
-                return True
-            else:
-                raise NotEnoughSharesException
-        except Exception:
-            print("ERROR")
+        if action == ActionType.BUY:
+            id = trade(conn, ticker, shares, price, date, action)
+            return True
+        elif action == ActionType.SELL and we_have_inventory_for_sale(conn, ticker, shares):
+            id = trade(conn, ticker, shares, price, date, action)
+            return True
+        else:
+            raise NotEnoughSharesException
+        # except Exception:
+            # print("ERROR")
 
 def parse_action(action):
     if 'b' in action.lower():

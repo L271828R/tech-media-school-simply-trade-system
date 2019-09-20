@@ -20,6 +20,7 @@ def print_trade_preview(ticker, action, price, shares, tran_amount):
 
 
 def print_options_screen(cash_bal):
+    cash_bal = float(cash_bal)
     print(f"Cash Balance: ${cash_bal:,}")
     print("Cash Market Value of Securities:")
     print("")

@@ -35,6 +35,7 @@ create table price_types(
 );
 
 INSERT INTO price_types (name) VALUES ('FROM_SALE');
+INSERT INTO price_types (name) VALUES ('FROM_BUY');
 INSERT INTO price_types (name) VALUES ('EOD');
 INSERT INTO price_types (name) VALUES ('INTRA_DAY');
 
