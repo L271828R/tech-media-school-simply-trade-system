@@ -1,4 +1,10 @@
+import os
 
+def clear_screen():
+    if os.name == 'nt':
+        os.system('cls')
+    else:
+        os.system('clear')
 
 def print_not_enough_cash_screen(cash_bal, tran_amount):
             print("")
@@ -6,6 +12,7 @@ def print_not_enough_cash_screen(cash_bal, tran_amount):
             print("")
             print("[ENTER]")
             input()
+            clear_screen()
 
 def print_trade_preview(ticker, action, price, shares, tran_amount):
     s = f"\n\rTrade {ticker} {action} {shares}@{price} = " + f"${tran_amount:,}"
@@ -19,9 +26,10 @@ def print_options_screen(cash_bal):
     print(" Would you like to:")
     print("")
     print("(1) Trade ")
-    print("(2) Deposit Money")
-    print("(3) Get Reports")
-    print("(4) Exit ")
+    print("(2) Activity ")
+    print("(3) Deposit Money")
+    print("(4) Get Reports")
+    print("(5) Exit ")
 
 
 def print_banner():
@@ -36,3 +44,10 @@ def print_not_enough_shares_screen(share_bal, shares, ticker):
     print("[ENTER]")
     print()
     input()
+
+def print_activity_banner():
+    print()
+    print(" " + ("*" * 40))
+    print(""" **           Acivity Screen .        **  """)
+    print(" " + ("*" * 40))
+

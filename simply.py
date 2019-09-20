@@ -49,7 +49,6 @@ def trade(conn, ticker, shares, price, date, action):
     sql = sql.replace('__ACTION__', str(action)) 
     sql = sql.replace('__PRICE__', str(price))
     sql = sql.replace('__DATE__', str(date))
-    print('executing sql', sql)
     conn.execute(sql)
     conn.commit()
 
@@ -93,23 +92,29 @@ def get_share_balance(conn, ticker):
     else:
         return result[0]
     
-
-def transaction(conn, ticker, shares, price, action):
-    date = datetime.now().strftime("%Y-%m-%d")
-    tran_amount = round(shares * price, 2)
-    screens.print_trade_preview(ticker, action, price, shares, tran_amount)
-
+def trade_validation(conn, action, shares, price, ticker, tran_amount):
     if action == ActionType.BUY:
         cash_bal = get_cash_balance(conn)
         if float(cash_bal) - (shares * price) < 0:
             screens.print_not_enough_cash_screen(cash_bal, tran_amount)
             return False
+        else:
+            return True
     elif action == ActionType.SELL:
         shares_bal = get_share_balance(conn, ticker)
         if shares_bal - shares < 0:
             screens.print_not_enough_shares_screen(shares_bal, shares, ticker)
             return False
+        else:
+            return True
 
+
+def transaction(conn, ticker, shares, price, action):
+    date = datetime.now().strftime("%Y-%m-%d")
+    tran_amount = round(shares * price, 2)
+    screens.print_trade_preview(ticker, action, price, shares, tran_amount)
+    if not trade_validation(conn, action, shares, price, ticker, tran_amount):
+        return False
     ans = input("are you sure?")
     if 'y' in ans:
         try:
@@ -150,6 +155,17 @@ def does_symbol_exist(conn, ticker):
     else:
         return True
 
+
+
+def enter_trade_action(text):
+    while(True):
+        action = input(text)
+        if action.lower()[0] == 'b':
+            return ActionType.BUY
+        if action.lower()[0] == 's':
+            return ActionType.SELL
+
+
 def trade_screen(conn):
     ticker = input('please enter symbol ').upper()
     # ticker = 'SVXY'
@@ -160,14 +176,17 @@ def trade_screen(conn):
         else:
             exit()
     shares = int(input('please enter shares '))
-    action = input('please enter buy or sell ')
+    action = enter_trade_action("please enter [b]uy or [s]ell ")
     price = int(input('please enter price '))
     # shares = 200
     # action = ActionType.BUY
     # action = ActionType.SELL
     # price = 1
     action = parse_action(action)
-    result = transaction(conn, ticker, shares, price, action)
+    if transaction(conn, ticker, shares, price, action):
+        print("Trade Filled")
+        input("[ENTER]")
+        screens.clear_screen()
 
 
 class CashEntryType:
@@ -186,11 +205,7 @@ def deposit(conn, amount):
     conn.commit()
     return True
     
-def clear_screen():
-    if os.name == 'nt':
-        os.system('cls')
-    else:
-        os.system('clear')
+
 
 def deposit_screen(conn):
     print(" How much would you like to deposit? ")
@@ -199,7 +214,7 @@ def deposit_screen(conn):
         deposit(conn, ans)
     print("Amoutn deposited")
     input("[ENTER]")
-    clear_screen()
+    screens.clear_screen()
 
 
 def get_cash_balance(conn):
@@ -211,6 +226,29 @@ def get_cash_balance(conn):
     else:
         return res[0]
 
+def get_ticker_from_id(ticker_id):
+    sql_template = "SELECT ticker from tickers WHERE id = __ID__"
+    sql = sql_template.replace('__ID__', str(ticker_id))
+    cursor = conn.execute(sql)
+    result = cursor.fetchone()[0]
+    return result
+
+
+def format_activity(row):
+    ticker = get_ticker_from_id(row[1])
+    s = f"Tran Id={row[0]} Ticker={ticker} {row[2]} @ {row[4]} {row[5]}"
+    print(s)
+
+def get_todays_activity(conn):
+    sql_template = "SELECT * FROM transactions where trade_date = '__TRADE_DATE__'"
+    sql = sql_template.replace('__TRADE_DATE__', datetime.now().strftime("%Y-%m-%d"))
+    results = conn.execute(sql)
+    screens.clear_screen()
+    screens.print_activity_banner()
+    for row in results:
+        format_activity(row)
+    input("[ENTER]")
+    screens.clear_screen()
 
 
 if __name__ == '__main__':
@@ -222,13 +260,16 @@ if __name__ == '__main__':
     while(True):
         screens.print_banner()
         screens.print_options_screen(get_cash_balance(conn))
+        print("")
         ans = input()
         if ans == "1":
             trade_screen(conn)
         elif ans == "2":
-            deposit_screen(conn)
+            get_todays_activity(conn)
         elif ans == "3":
-            exit()
+            deposit_screen(conn)
         elif ans == "4":
+            exit()
+        elif ans == "5":
             exit()
 
