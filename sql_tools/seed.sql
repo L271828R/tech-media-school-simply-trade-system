@@ -26,7 +26,7 @@ create table cash_balance (
     type VARCHAR(30),
     transaction_id NUMBER,
     amount NUMBER,
-    date Date
+    DATE DEFAULT (DATETIME('now', 'localtime'))
 );
 
 create table price_types(
@@ -42,9 +42,11 @@ INSERT INTO price_types (name) VALUES ('INTRA_DAY');
 create table prices (
     id integer not null primary key AUTOINCREMENT,
     ticker_id NUMBER,
-    price_date DATE,
-    type VARCHAR(30),
+    price NUMBER,
+    price_date DATE DEFAULT (DATETIME('now', 'localtime')),
+    price_type_id integer,
     transaction_id NUMBER,
-    modified_date DATE
+    modified_date DATE DEFAULT (DATETIME('now', 'localtime')),
+    FOREIGN KEY (price_type_id) REFERENCES price_types(id)
 );
 

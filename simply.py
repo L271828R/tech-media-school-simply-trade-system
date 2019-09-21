@@ -143,11 +143,64 @@ def trade_validation(conn, action, shares, price, ticker, tran_amount):
         else:
             return True
 
-def add_to_pricing_table(conn, action, price, ticker, transaction_id):
-    sql_template = "INSERT INTO prices (ticker_id, price_date, type, transaction_id)"
-    if action == ActionType.BUY:
-        pass
 
+def get_pricing_type(action):
+    sql_template = "SELECT id from price_types where name = '__NAME__'"
+    if action == ActionType.BUY:
+        sql = sql_template.replace('__NAME__', "FROM_BUY")
+    elif action == ActionType.SELL:
+        if action == ActionType.BUY:
+           sql = sql_template.replace('__NAME__', "FROM_SALE")
+
+    cursor = conn.execute(sql)
+    result = cursor.fetchone()
+    return result[0]
+
+def add_to_pricing_table(conn, action, price, ticker, transaction_id):
+    ticker_id = get_ticker_id(conn, ticker)
+    pricing_id = get_pricing_type(action)
+
+    sql_template = """
+    INSERT INTO prices 
+    (ticker_id, price_type_id, price, transaction_id)
+    values (
+    '__TICKER_ID__',
+    __PRICE_TYPE_ID__,
+    __PRICE__,
+    __TRANSACTION_ID__ )
+    """
+    sql = sql_template.replace('__TICKER_ID__', ticker_id)
+    sql = sql.replace('__TICKER_ID__', ticker_id)
+    sql = sql.replace('__PRICE_TYPE_ID__', str(pricing_id))
+    sql = sql.replace('__PRICE__', str(price))
+    sql = sql.replace('__TRANSACTION_ID__', str(transaction_id))
+    conn.execute(sql)
+    conn.commit()
+    return True
+
+def move_cash(amount, action, transaction_id):
+    sql_template = """
+        INSERT INTO cash_balance
+        (type, transaction_id, amount)
+        VALUES
+        (
+            '__TYPE__',
+            __TRANSACTION_ID__,
+            __AMOUNT__
+        )
+    """
+    sql = sql_template.replace('__TYPE__', action)
+    sql = sql.replace('__TRANSACTION_ID__', transaction_id)
+
+    if action == ActionType.BUY:
+        amount = amount * -1
+
+    sql = sql_tempate.replace('__AMOUNT__', str(amount))
+    conn.execute(sql)
+    conn.commit()
+    return True
+
+        
 
 def transaction(conn, ticker, shares, price, action):
     date = datetime.now().strftime("%Y-%m-%d")
@@ -160,11 +213,17 @@ def transaction(conn, ticker, shares, price, action):
         ans = input("are you sure?")
         if 'y' in ans:
             if action == ActionType.BUY:
-                id = trade(conn, ticker, shares, price, date, action)
-                return True
+                transaction_id = trade(conn, ticker, shares, price, date, action)
             elif action == ActionType.SELL and we_have_inventory_for_sale(conn, ticker, shares):
-                id = trade(conn, ticker, shares, price, date, action)
-                return True
+                transaction_id = trade(conn, ticker, shares, price, date, action)
+
+            add_to_pricing_table(conn, action, price, ticker, transaction_id) 
+            amount = shares * price
+            move_cash(amount, action, transaction_id)
+            return True
+
+        if 'n' in ans:
+            return False
 
 def parse_action(action):
     if 'b' in action.lower():
