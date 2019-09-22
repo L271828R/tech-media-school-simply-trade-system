@@ -26,7 +26,7 @@ create table cash_balance (
     type VARCHAR(30),
     transaction_id NUMBER,
     amount NUMBER,
-    DATE DEFAULT (DATETIME('now', 'localtime'))
+    date DATE DEFAULT (DATETIME('now', 'localtime'))
 );
 
 create table price_types(

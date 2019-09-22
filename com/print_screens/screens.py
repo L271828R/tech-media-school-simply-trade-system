@@ -19,17 +19,27 @@ def print_trade_preview(ticker, action, price, shares, tran_amount):
     print(s)
 
 
-def print_options_screen(cash_bal):
-    cash_bal = float(cash_bal)
-    print(f"Cash Balance: ${cash_bal:,}")
-    print("Cash Market Value of Securities:")
+def print_options_screen(cash_bal, port_value):
+    cash_bal = int(cash_bal)
+    s_port_value = f"${port_value:,}"
+    s_cash_bal = f"${cash_bal:,}"
+    market_value_of_securities = "{:<30}{:>10}".format(
+        " Market Value of Securities",
+        s_port_value
+    )
+    cash_balance = "{:<30}{:>10}".format(
+        " Cash Balance",
+        s_cash_bal
+    )
+    print(market_value_of_securities)
+    print(cash_balance)
     print("")
     print(" Would you like to:")
     print("")
     print("(1) Trade ")
     print("(2) Activity ")
     print("(3) Deposit Money")
-    print("(4) Get Reports")
+    print("(4) Portfolio")
     print("(5) Exit ")
 
 
@@ -52,3 +62,31 @@ def print_activity_banner():
     print(""" **           Acivity Screen .        **  """)
     print(" " + ("*" * 40))
 
+def print_portfolio_screen(portfolio):
+    columns = "{:<12}{:<12}{:<12}{:<12}".format("TICKER", "SHARES", "PRICE", "MARKET VALUE")
+    clear_screen()
+    print("\r\n")
+    print(columns)
+    print("-" * 60)
+    mv = 0
+
+    # sort by MV
+    portfolio = sorted(portfolio, key=lambda x: x['market_value'], reverse=True)
+
+
+    for item in portfolio:
+        mv += item['market_value']
+        s = "{:<12}{:<12}${:<11,}${:,}".format(
+            item['ticker'],
+            item['shares'],
+            item['price'],
+            item['market_value']
+            )
+        print(s)
+    print("-" * 60)
+    s = "{:>30}{:>7}{:,}".format("portfolio value","$", mv)
+    print(s)
+
+    print("")
+    input("[ENTER]")
+    clear_screen()

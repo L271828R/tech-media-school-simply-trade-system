@@ -146,11 +146,11 @@ def trade_validation(conn, action, shares, price, ticker, tran_amount):
 
 def get_pricing_type(action):
     sql_template = "SELECT id from price_types where name = '__NAME__'"
+    sql = ""
     if action == ActionType.BUY:
         sql = sql_template.replace('__NAME__', "FROM_BUY")
     elif action == ActionType.SELL:
-        if action == ActionType.BUY:
-           sql = sql_template.replace('__NAME__', "FROM_SALE")
+        sql = sql_template.replace('__NAME__', "FROM_SALE")
 
     cursor = conn.execute(sql)
     result = cursor.fetchone()
@@ -164,7 +164,7 @@ def add_to_pricing_table(conn, action, price, ticker, transaction_id):
     INSERT INTO prices 
     (ticker_id, price_type_id, price, transaction_id)
     values (
-    '__TICKER_ID__',
+    __TICKER_ID__,
     __PRICE_TYPE_ID__,
     __PRICE__,
     __TRANSACTION_ID__ )
@@ -190,12 +190,12 @@ def move_cash(amount, action, transaction_id):
         )
     """
     sql = sql_template.replace('__TYPE__', action)
-    sql = sql.replace('__TRANSACTION_ID__', transaction_id)
+    sql = sql.replace('__TRANSACTION_ID__', str(transaction_id))
 
     if action == ActionType.BUY:
         amount = amount * -1
 
-    sql = sql_tempate.replace('__AMOUNT__', str(amount))
+    sql = sql.replace('__AMOUNT__', str(amount))
     conn.execute(sql)
     conn.commit()
     return True
@@ -211,6 +211,7 @@ def transaction(conn, ticker, shares, price, action):
         return False
     while(True):
         ans = input("are you sure?")
+        transaction_id = -1
         if 'y' in ans:
             if action == ActionType.BUY:
                 transaction_id = trade(conn, ticker, shares, price, date, action)
@@ -263,7 +264,13 @@ def enter_trade_action(text):
 
 
 def trade_screen(conn):
-    ticker = input('please enter symbol ').upper()
+    while(True):
+        ticker = input('please enter symbol ').upper()
+        if ticker.isalpha():
+            break
+        else:
+            print("")
+            print("please enter letters only")
     # ticker = 'SVXY'
     if not does_symbol_exist(conn, ticker):
         ans = input('symbol ' + ticker + ' does not exist. create? y/n ')
@@ -346,16 +353,68 @@ def get_todays_activity(conn):
     input("[ENTER]")
     screens.clear_screen()
 
+def get_portfolio(conn):
+    sql_open_positions = """
+    SELECT
+    ticker,
+    SUM(shares) 
+    FROM 
+    transactions tr,
+    tickers tk
+    WHERE 
+    tr.ticker_id = tk.id group by ticker
+    HAVING SUM(shares) > 0;"""
+
+    sql_last_prices = """
+    SELECT
+    ticker, 
+    price,
+    MAX(price_date) 
+    FROM prices, 
+    tickers 
+    WHERE 
+    prices.ticker_id = tickers.id 
+    GROUP BY ticker_id;
+    """
+    cursor = conn.execute(sql_open_positions)
+    open_positions = cursor.fetchall()
+    cursor = conn.execute(sql_last_prices)
+    last_prices = cursor.fetchall()
+    TICKER = 0
+    SHARES = 1
+    PRICE  = 1
+    arr = []
+    for open_pos in open_positions:
+        for last_price in last_prices:
+            if open_pos[TICKER] == last_price[TICKER]:
+                price  = last_price[PRICE] 
+                shares = open_pos[SHARES]
+                arr.append({
+                    'ticker': open_pos[TICKER],
+                    'shares': shares,
+                    'price': price,
+                    'market_value': price * shares})
+    return arr
+
+def get_portfolio_value(conn):
+    port_items = get_portfolio(conn)
+    mv = sum([x['market_value'] for x in port_items])
+    return mv
+
+def portfolio_screen(conn):
+    portfolio = get_portfolio(conn)
+    screens.print_portfolio_screen(portfolio)
 
 if __name__ == '__main__':
     conf = {'db_location':"db/trade.db",
     'log_location':'logs'}
     conn = create_connection(conf)
-    cash_balance = get_cash_balance(conn)
 
     while(True):
+        portfolio_value = get_portfolio_value(conn)
+        cash_balance = get_cash_balance(conn)
         screens.print_banner()
-        screens.print_options_screen(get_cash_balance(conn))
+        screens.print_options_screen(cash_balance, portfolio_value)
         print("")
         ans = input()
         if ans == "1":
@@ -365,7 +424,7 @@ if __name__ == '__main__':
         elif ans == "3":
             deposit_screen(conn)
         elif ans == "4":
-            exit()
+            portfolio_screen(conn)
         elif ans == "5":
             exit()
 
