@@ -46,11 +46,43 @@ def run(conf):
 def run_alerts(conn):
     print('Alerts')
 
+def get_last_price_type_date_by_ticker(conn, ticker):
+    sql_template = """
+        SELECT price, price_types.name, max(price_date) FROM prices, 
+        price_types, 
+        tickers 
+        where 
+        prices.ticker_id = tickers.id 
+        and 
+        price_type_id = price_types.id
+        and 
+        tickers.ticker = '__TICKER__'
+    """
+    sql = sql_template.replace('__TICKER__', ticker)
+    cursor = conn.execute(sql)
+    result = cursor.fetchone()
+    return result 
+
+def enter_price_logic(conn, ticker):
+    pass
+
 def enter_prices(conn):
     portfolio = get_portfolio(conn)
-    for row in portfolio:
-        print(row)
+    screens.clear_screen()
+    print("*" * 55)
+    print("***             Price Entry Screen              ***")
+    print("*" * 55)
     print("")
+    s = "{:<5}{:<10}{:<15}{:<10}{:<10}".format("#", "ticker", "last price", "source", "date")
+    print(s)
+    for i, row in enumerate(portfolio):
+        ticker = row['ticker']
+        last_price, price_type, date = get_last_price_type_date_by_ticker(conn, ticker)
+        print(f"{i:<5}{ticker:<10}{last_price:<15}{price_type:<10}{date:<10}")
+    print("")
+    print("----------------------")
+    ans = input("Enter number for ticker you want to enter prices for. [E]xit")
+    enter_price_logic(conn, portfolio[ans])
     input("[ENTER]")
     screens.clear_screen()
     
