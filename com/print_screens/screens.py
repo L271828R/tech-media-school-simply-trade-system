@@ -40,7 +40,9 @@ def print_options_screen(cash_bal, port_value):
     print("(2) Activity ")
     print("(3) Deposit Money")
     print("(4) Portfolio")
-    print("(5) Exit ")
+    print("(5) Enter Prices")
+    print("(6) Run EOD")
+    print("(7) Exit ")
 
 
 def print_banner():

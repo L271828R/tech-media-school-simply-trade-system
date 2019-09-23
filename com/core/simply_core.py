@@ -11,6 +11,50 @@ from ..tooling.tooling import enter_trade_action
 from ..tooling.tooling import parse_action
 from ..tooling.tooling import create_connection
 
+
+def run(conf):
+    conn = create_connection(conf)
+
+    with conn:
+        while(True):
+            screens.clear_screen()
+            portfolio_value = get_portfolio_value(conn)
+            cash_balance = get_cash_balance(conn)
+            screens.print_banner()
+            screens.print_options_screen(cash_balance, portfolio_value)
+            print("")
+            print("-------------------------------")
+            run_alerts(conn)
+            print("-------------------------------")
+            ans = input(">> ")
+            if ans == "1":
+                trade_screen(conn)
+            elif ans == "2":
+                get_todays_activity(conn)
+            elif ans == "3":
+                deposit_screen(conn)
+            elif ans == "4":
+                portfolio_screen(conn)
+            elif ans == "5":
+                enter_prices(conn)
+            elif ans == "6":
+                #run_eod(conn)
+                pass
+            elif ans == "7":
+                exit()
+
+def run_alerts(conn):
+    print('Alerts')
+
+def enter_prices(conn):
+    portfolio = get_portfolio(conn)
+    for row in portfolio:
+        print(row)
+    print("")
+    input("[ENTER]")
+    screens.clear_screen()
+    
+
 # class NoInventoryError(Exception):
 #     pass
 
@@ -193,6 +237,8 @@ def transaction(conn, ticker, shares, price, action):
         transaction_id = -1
         if 'y' in ans:
             if action == ActionType.BUY:
+                if not does_symbol_exist(conn, ticker):
+                    create_ticker(conn, ticker)
                 transaction_id = trade(conn, ticker, shares, price, date, action)
             elif action == ActionType.SELL and we_have_inventory_for_sale(conn, ticker, shares):
                 transaction_id = trade(conn, ticker, shares, price, date, action)
@@ -214,18 +260,18 @@ def trade_screen(conn):
             print("")
             print("please enter letters only")
     # ticker = 'SVXY'
-    if not does_symbol_exist(conn, ticker):
-        ans = input('symbol ' + ticker + ' does not exist. create? y/n ')
-        if 'y' in ans.lower():
-            create_ticker(conn, ticker)
-        else:
-            exit()
+    # if not does_symbol_exist(conn, ticker):
+    #     ans = input('symbol ' + ticker + ' does not exist. create? y/n ')
+    #     if 'y' in ans.lower():
+    #         create_ticker(conn, ticker)
+    #     else:
+    #         exit()
     shares = int(input('please enter shares '))
     action = enter_trade_action("please enter [b]uy or [s]ell ", ActionType)
     price = int(input('please enter price '))
     action = parse_action(action, ActionType)
     if transaction(conn, ticker, shares, price, action):
-        print("Trade Filled")
+        print("Trade Successful")
         input("[ENTER]")
         screens.clear_screen()
 

@@ -1,1 +1,1 @@
-sqlite3 ../trade.db < ../seed.sql
+sqlite3 db/trade.db < sql_tools/seed.sql
