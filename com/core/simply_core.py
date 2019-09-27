@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+from datetime import timedelta
 import os
 import sys
 from ..print_screens import screens
@@ -38,9 +39,6 @@ def run(conf):
             elif ans == "5":
                 enter_prices(conn)
             elif ans == "6":
-                #run_eod(conn)
-                pass
-            elif ans == "7":
                 exit()
 
 def run_alerts(conn):
@@ -64,27 +62,94 @@ def get_last_price_type_date_by_ticker(conn, ticker):
     return result 
 
 def enter_price_logic(conn, ticker):
-    pass
+    sql_price_insert_template = """
+    INSERT INTO prices 
+    (price, ticker_id, price_date, price_type_id)
+    VALUES(
+    __PRICE__,
+    __TICKER_ID__,
+    '__PRICE_DATE__',
+    __PRICE_TYPE_ID__)
+    """
+    sql_price_delete_template = """
+    DELETE FROM prices 
+    WHERE
+    ticker_id = __TICKER_ID__
+    AND
+    price_date = '__PRICE_DATE__'
+    AND
+    price_type_id = __PRICE_TYPE_ID__
+    """
+
+    print("Ticker Chosen", ticker)
+    price = input("enter price\r\n")
+    price_type = input("Enter Price Type: [E]OD [I]ntra-day\r\n").lower()
+    today_date = datetime.now()
+    yesterday_date = today_date - timedelta(days=1)
+    ans = input(f"""
+    For which day?
+    [1] {today_date.year}-{today_date.month}-{today_date.day}
+    [2] {yesterday_date.year}-{yesterday_date.month}-{yesterday_date.day}\r\n
+    """)
+    date_to_use = None
+    if ans == "1" and price_type == 'e':
+        date_to_use = today_date.strftime('%Y-%m-%d 23:59:59')
+    elif ans == "2" and price_type == 'e':
+        # date_to_use = yesterday_date.strftime('%Y-%m-%d %H:%M:%S')
+        date_to_use = yesterday_date.strftime('%Y-%m-%d 23:59:59')
+    elif ans == "1" and price_type == 'i':
+        date_to_use = today_date.strftime('%Y-%m-%d %H:%M:%S')
+    elif ans == "2" and price_type == 'i':
+        date_to_use = yesterday_date.strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        return False
+
+    sql_price_type_template = "SELECT id from price_types where name = '__NAME__'"
+    if 'e' in price_type:
+        sql = sql_price_type_template.replace('__NAME__', 'EOD')
+    elif 'i' in price_type:
+        sql = sql_price_type_template.replace('__NAME__', 'INTRA_DAY')
+    cursor = conn.execute(sql)
+    price_type_id = cursor.fetchone()[0]
+    ticker_id = get_ticker_id(conn, ticker)
+
+    sql_delete = sql_price_delete_template.replace('__PRICE_DATE__', date_to_use)
+    sql_delete = sql_delete.replace('__PRICE_TYPE_ID__', str(price_type_id))
+    sql_delete = sql_delete.replace('__TICKER_ID__', ticker_id)
+    conn.execute(sql_delete)
+    conn.commit()
+
+    sql_insert = sql_price_insert_template.replace('__PRICE__', price)
+    sql_insert = sql.replace('__PRICE_DATE__', date_to_use)
+    sql_insert = sql.replace('__PRICE_TYPE_ID__', str(price_type_id))
+    sql_insert = sql.replace('__TICKER_ID__', ticker_id)
+    conn.execute(sql_insert)
+    conn.commit()
+
 
 def enter_prices(conn):
-    portfolio = get_portfolio(conn)
-    screens.clear_screen()
-    print("*" * 55)
-    print("***             Price Entry Screen              ***")
-    print("*" * 55)
-    print("")
-    s = "{:<5}{:<10}{:<15}{:<10}{:<10}".format("#", "ticker", "last price", "source", "date")
-    print(s)
-    for i, row in enumerate(portfolio):
-        ticker = row['ticker']
-        last_price, price_type, date = get_last_price_type_date_by_ticker(conn, ticker)
-        print(f"{i:<5}{ticker:<10}{last_price:<15}{price_type:<10}{date:<10}")
-    print("")
-    print("----------------------")
-    ans = input("Enter number for ticker you want to enter prices for. [E]xit")
-    enter_price_logic(conn, portfolio[ans])
-    input("[ENTER]")
-    screens.clear_screen()
+    while(True):
+        portfolio = get_portfolio(conn)
+        screens.clear_screen()
+        print("*" * 55)
+        print("***             Price Entry Screen              ***")
+        print("*" * 55)
+        print("")
+        s = "{:<5}{:<10}{:<15}{:<10}{:<10}".format("#", "ticker", "last price", "source", "date")
+        print(s)
+        for i, row in enumerate(portfolio):
+            ticker = row['ticker']
+            last_price, price_type, date = get_last_price_type_date_by_ticker(conn, ticker)
+            print(f"{i:<5}{ticker:<10}{last_price:<15}{price_type:<10}{date:<10}")
+        print("")
+        print("----------------------")
+        ans = input("Enter number for ticker you want to enter prices for. [M]enu\r\n").lower()
+        if ans == 'm':
+            break
+        if ans.isdigit():
+            enter_price_logic(conn, portfolio[int(ans)]['ticker'])
+        input("[ENTER]")
+        screens.clear_screen()
     
 
 # class NoInventoryError(Exception):
@@ -354,7 +419,7 @@ def get_todays_activity(conn):
     screens.print_activity_banner()
     for row in results:
         format_activity(conn, row)
-    input("[ENTER]")
+    input("[M]enu [E]xport total activity")
     screens.clear_screen()
 
 def get_portfolio(conn):
@@ -380,6 +445,28 @@ def get_portfolio(conn):
     prices.ticker_id = tickers.id 
     GROUP BY ticker_id;
     """
+
+    sql_get_second_last_prices_template = """
+    SELECT 
+    price, 
+    tickers.ticker, 
+    MAX(price_date) 
+    FROM prices,
+    tickers
+    WHERE prices.ticker_id = tickers.id
+    AND 
+    tickers.ticker = '__TICKER__'
+    AND
+    price_date < (
+        SELECT MAX(price_date)
+        FROM prices,
+        tickers
+        WHERE prices.ticker_id = tickers.id
+        AND 
+        tickers.ticker = '__TICKER__'); 
+    """
+
+
     cursor = conn.execute(sql_open_positions)
     open_positions = cursor.fetchall()
     cursor = conn.execute(sql_last_prices)
@@ -389,6 +476,9 @@ def get_portfolio(conn):
     PRICE  = 1
     arr = []
     for open_pos in open_positions:
+        sql = sql_get_second_last_prices_template.replace('__TICKER__', open_pos[TICKER])
+        cursor = conn.execute(sql)
+        price_prior = cursor.fetchone()[0]
         for last_price in last_prices:
             if open_pos[TICKER] == last_price[TICKER]:
                 price  = last_price[PRICE] 
@@ -397,6 +487,7 @@ def get_portfolio(conn):
                     'ticker': open_pos[TICKER],
                     'shares': shares,
                     'price': price,
+                    'price_prior': price_prior,
                     'market_value': price * shares})
     return arr
 

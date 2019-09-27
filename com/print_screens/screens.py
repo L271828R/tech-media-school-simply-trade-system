@@ -41,14 +41,13 @@ def print_options_screen(cash_bal, port_value):
     print("(3) Deposit Money")
     print("(4) Portfolio")
     print("(5) Enter Prices")
-    print("(6) Run EOD")
-    print("(7) Exit ")
+    print("(6) Exit ")
 
 
 def print_banner():
     print()
     print(" " + ("*" * 40))
-    print(""" **  Welcome to simply trade v.05      **  """)
+    print(""" **  Welcome to simply trade v.08      **  """)
     print(" " + ("*" * 40))
 
 def print_not_enough_shares_screen(share_bal, shares, ticker):
@@ -65,11 +64,11 @@ def print_activity_banner():
     print(" " + ("*" * 40))
 
 def print_portfolio_screen(portfolio):
-    columns = "{:<12}{:<12}{:<12}{:<12}".format("TICKER", "SHARES", "PRICE", "MARKET VALUE")
+    columns = "{:<12}{:<12}{:<12}{:<19}{:<12}{:<12}".format("TICKER", "SHARES", "PRICE", "MARKET VALUE", "CHANGE", "PERCENT CHANGE")
     clear_screen()
     print("\r\n")
     print(columns)
-    print("-" * 60)
+    print("-" * 80)
     mv = 0
 
     # sort by MV
@@ -77,15 +76,19 @@ def print_portfolio_screen(portfolio):
 
 
     for item in portfolio:
+        perc_change = round(( item['price'] / item['price_prior'] ) - 1, 2) * 100
+        change = (item['price'] * item['shares']) - (item['price_prior'] * item['shares'])
         mv += item['market_value']
-        s = "{:<12}{:<12}${:<11,}${:,}".format(
+        s = "{:<12}{:<12}${:<11,}${:<19,}${:<12}{:}%".format(
             item['ticker'],
             item['shares'],
             item['price'],
-            item['market_value']
+            item['market_value'],
+            change,
+            perc_change
             )
         print(s)
-    print("-" * 60)
+    print("-" * 80)
     s = "{:>30}{:>7}{:,}".format("portfolio value","$", mv)
     print(s)
 
