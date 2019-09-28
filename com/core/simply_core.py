@@ -187,12 +187,13 @@ def get_transaction_id(conn, ticker, shares, price, date, action):
     result = cursor.fetchone()
     return result[0]
 
-def trade(conn, ticker, shares, price, date, action):
+def insert_transaction(conn, ticker, shares, price, date, action):
     sql_template = """
-        INSERT INTO transactions (ticker_id, shares, action, price) VALUES (
+        INSERT INTO transactions (ticker_id, shares, action, trade_date, price) VALUES (
         '__TICKER_ID__',
         __SHARES__,
         '__ACTION__',
+        '__TRADE_DATE__',
         __PRICE__)
         """
 
@@ -205,7 +206,7 @@ def trade(conn, ticker, shares, price, date, action):
 
     sql = sql.replace('__ACTION__', str(action)) 
     sql = sql.replace('__PRICE__', str(price))
-    # sql = sql.replace('__DATE__', str(date))
+    sql = sql.replace('__TRADE_DATE__', str(date))
     conn.execute(sql)
     conn.commit()
 
@@ -322,8 +323,18 @@ def move_cash(conn, amount, action, transaction_id):
     conn.commit()
     return True
 
-def transaction(conn, ticker, shares, price, action):
-    date = datetime.now().strftime("%Y-%m-%d")
+
+def trade(conn, ticker, shares, price, action, date = None):
+    if date is None:
+        date = datetime.now().strftime("%Y-%m-%d")
+
+    transaction_id = insert_transaction(conn, ticker, shares, price, date, action)
+    add_to_pricing_table(conn, action, price, ticker, transaction_id) 
+    amount = shares * price
+    move_cash(conn, amount, action, transaction_id)
+    return True
+
+def transaction(conn, ticker, shares, price, action, date=datetime.now().strftime("%Y-%m-%d")):
     tran_amount = round(shares * price, 2)
     screens.print_trade_preview(ticker, action, price, shares, tran_amount)
     if not trade_validation(conn, action, shares, price, ticker, tran_amount):
@@ -331,20 +342,11 @@ def transaction(conn, ticker, shares, price, action):
         return False
     while(True):
         ans = input("are you sure? ")
-        transaction_id = -1
         if 'y' in ans:
             if action == ActionType.BUY:
                 if not does_symbol_exist(conn, ticker):
                     create_ticker(conn, ticker)
-                transaction_id = trade(conn, ticker, shares, price, date, action)
-            elif action == ActionType.SELL and we_have_inventory_for_sale(conn, ticker, shares):
-                transaction_id = trade(conn, ticker, shares, price, date, action)
-
-            add_to_pricing_table(conn, action, price, ticker, transaction_id) 
-            amount = shares * price
-            move_cash(conn, amount, action, transaction_id)
-            return True
-
+            return trade(conn, ticker, shares, price, action, date)
         if 'n' in ans:
             return False
 
@@ -365,7 +367,7 @@ def trade_screen(conn):
     #         exit()
     shares = int(input('please enter shares '))
     action = enter_trade_action("please enter [b]uy or [s]ell ", ActionType)
-    price = int(input('please enter price '))
+    price = float(input('please enter price '))
     action = parse_action(action, ActionType)
     if transaction(conn, ticker, shares, price, action):
         print("Trade Successful")
@@ -438,30 +440,30 @@ def get_portfolio(conn):
     SELECT
     ticker, 
     price,
-    MAX(price_date) 
-    FROM prices, 
+    MAX(p.id) 
+    FROM prices p, 
     tickers 
     WHERE 
-    prices.ticker_id = tickers.id 
-    GROUP BY ticker_id;
+    p.ticker_id = tickers.id 
+    GROUP BY p.ticker_id;
     """
 
     sql_get_second_last_prices_template = """
     SELECT 
     price, 
     tickers.ticker, 
-    MAX(price_date) 
-    FROM prices,
+    MAX(p.id) 
+    FROM prices p,
     tickers
-    WHERE prices.ticker_id = tickers.id
+    WHERE p.ticker_id = tickers.id
     AND 
     tickers.ticker = '__TICKER__'
     AND
-    price_date < (
-        SELECT MAX(price_date)
-        FROM prices,
+    p.id < (
+        SELECT MAX(p.id)
+        FROM prices p,
         tickers
-        WHERE prices.ticker_id = tickers.id
+        WHERE p.ticker_id = tickers.id
         AND 
         tickers.ticker = '__TICKER__'); 
     """
@@ -482,6 +484,8 @@ def get_portfolio(conn):
         for last_price in last_prices:
             if open_pos[TICKER] == last_price[TICKER]:
                 price  = last_price[PRICE] 
+                if price_prior is None:
+                    price_prior = price
                 shares = open_pos[SHARES]
                 arr.append({
                     'ticker': open_pos[TICKER],

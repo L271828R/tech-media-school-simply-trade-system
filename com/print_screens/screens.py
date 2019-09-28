@@ -77,7 +77,7 @@ def print_portfolio_screen(portfolio):
 
     for item in portfolio:
         perc_change = round(( item['price'] / item['price_prior'] ) - 1, 2) * 100
-        change = (item['price'] * item['shares']) - (item['price_prior'] * item['shares'])
+        change = round(item['price'] - item['price_prior'], 2)
         mv += item['market_value']
         s = "{:<12}{:<12}${:<11,}${:<19,}${:<12}{:}%".format(
             item['ticker'],

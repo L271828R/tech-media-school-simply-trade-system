@@ -7,17 +7,6 @@ from com.tooling.tooling import *
 from com.core.simply_core import ActionType
 import pytest
 
-@pytest.fixture(scope="function")
-def db_connection():
-    seed_location = "/Users/luisrueda/Dropbox/scripts/simple_trading_system/sql_tools/seed.sql"
-    conn = sqlite3.connect("file::memory:?cache=shared")
-    with open(seed_location, 'r') as f:
-            sql = f.read()
-            conn.executescript(sql)
-    conn.commit()
-    return conn
-
-
 
 @pytest.fixture(scope="function")
 def xget_connection():
