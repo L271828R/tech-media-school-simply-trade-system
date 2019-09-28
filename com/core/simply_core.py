@@ -44,13 +44,14 @@ def run(conf):
 def run_alerts(conn):
     print('Alerts')
 
-def get_last_price_type_date_by_ticker(conn, ticker):
+def get_last_price_type_date_id_by_ticker(conn, ticker):
     sql_template = """
-        SELECT price, price_types.name, max(price_date) FROM prices, 
+        SELECT price, price_types.name, price_date, MAX(p.id) FROM 
+        prices p, 
         price_types, 
         tickers 
         where 
-        prices.ticker_id = tickers.id 
+        p.ticker_id = tickers.id 
         and 
         price_type_id = price_types.id
         and 
@@ -102,7 +103,7 @@ def enter_price_logic(conn, ticker):
     elif ans == "2" and price_type == 'i':
         date_to_use = yesterday_date.strftime('%Y-%m-%d %H:%M:%S')
     else:
-        return False
+        raise Exception
 
     sql_price_type_template = "SELECT id from price_types where name = '__NAME__'"
     if 'e' in price_type:
@@ -120,9 +121,9 @@ def enter_price_logic(conn, ticker):
     conn.commit()
 
     sql_insert = sql_price_insert_template.replace('__PRICE__', price)
-    sql_insert = sql.replace('__PRICE_DATE__', date_to_use)
-    sql_insert = sql.replace('__PRICE_TYPE_ID__', str(price_type_id))
-    sql_insert = sql.replace('__TICKER_ID__', ticker_id)
+    sql_insert = sql_insert.replace('__PRICE_DATE__', date_to_use)
+    sql_insert = sql_insert.replace('__PRICE_TYPE_ID__', str(price_type_id))
+    sql_insert = sql_insert.replace('__TICKER_ID__', ticker_id)
     conn.execute(sql_insert)
     conn.commit()
 
@@ -139,7 +140,7 @@ def enter_prices(conn):
         print(s)
         for i, row in enumerate(portfolio):
             ticker = row['ticker']
-            last_price, price_type, date = get_last_price_type_date_by_ticker(conn, ticker)
+            last_price, price_type, date, _ = get_last_price_type_date_id_by_ticker(conn, ticker)
             print(f"{i:<5}{ticker:<10}{last_price:<15}{price_type:<10}{date:<10}")
         print("")
         print("----------------------")
@@ -395,7 +396,7 @@ def deposit_screen(conn):
     ans =input()
     if ans.isnumeric():
         deposit(conn, ans)
-    print("Amoutn deposited")
+    print("Amount deposited")
     input("[ENTER]")
     screens.clear_screen()
 
