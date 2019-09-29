@@ -185,11 +185,8 @@ def we_have_inventory_for_sale(conn, ticker, shares):
         return False
 
 def get_inventory(conn, ticker):
-    sql_template = """
-        SELECT SUM(shares) from transactions where ticker_id = '__TICKER_ID__'
-        GROUP BY shares;
-        """
-    sql = sql_template.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
+    sql_get_inventory_template = sql_t.sql_get_inventory_template
+    sql = sql_get_inventory_template.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
     cursor = conn.execute(sql)
     result = cursor.fetchone()
     if result is not None:
@@ -198,8 +195,8 @@ def get_inventory(conn, ticker):
         return "0"
 
 def get_share_balance(conn, ticker):
-    sql_template = "SELECT SUM(shares) FROM transactions WHERE ticker_id = '__TICKER_ID__'"
-    sql = sql_template.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
+    sql_get_shares_balance_template = sql_t.sql_get_shares_balance_template
+    sql = sql_get_shares_balance_template.replace('__TICKER_ID__', get_ticker_id(conn, ticker))
     cursor = conn.execute(sql)
     result = cursor.fetchone()
     if result[0] is None:
@@ -224,12 +221,12 @@ def trade_validation(conn, action, shares, price, ticker, tran_amount):
             return True
 
 def get_pricing_type(conn, action):
-    sql_template = "SELECT id from price_types where name = '__NAME__'"
+    sql_select_price_types_template = sql_t.sql_select_price_types_template
     sql = ""
     if action == ActionType.BUY:
-        sql = sql_template.replace('__NAME__', "FROM_BUY")
+        sql = sql_select_price_types_template.replace('__NAME__', "FROM_BUY")
     elif action == ActionType.SELL:
-        sql = sql_template.replace('__NAME__', "FROM_SALE")
+        sql = sql_select_price_types_template.replace('__NAME__', "FROM_SALE")
 
     cursor = conn.execute(sql)
     result = cursor.fetchone()
@@ -239,16 +236,8 @@ def add_to_pricing_table(conn, action, price, ticker, transaction_id):
     ticker_id = get_ticker_id(conn, ticker)
     pricing_id = get_pricing_type(conn, action)
 
-    sql_template = """
-    INSERT INTO prices 
-    (ticker_id, price_type_id, price, transaction_id)
-    values (
-    __TICKER_ID__,
-    __PRICE_TYPE_ID__,
-    __PRICE__,
-    __TRANSACTION_ID__ )
-    """
-    sql = sql_template.replace('__TICKER_ID__', ticker_id)
+    sql_insert_into_prices_template = sql_t.sql_insert_into_prices_template
+    sql = sql_insert_into_prices_template.replace('__TICKER_ID__', ticker_id)
     sql = sql.replace('__TICKER_ID__', ticker_id)
     sql = sql.replace('__PRICE_TYPE_ID__', str(pricing_id))
     sql = sql.replace('__PRICE__', str(price))
@@ -258,17 +247,8 @@ def add_to_pricing_table(conn, action, price, ticker, transaction_id):
     return True
 
 def move_cash(conn, amount, action, transaction_id):
-    sql_template = """
-        INSERT INTO cash_balance
-        (type, transaction_id, amount)
-        VALUES
-        (
-            '__TYPE__',
-            __TRANSACTION_ID__,
-            __AMOUNT__
-        )
-    """
-    sql = sql_template.replace('__TYPE__', action)
+    sql_move_cash_template = sql_t.sql_move_cash_template
+    sql = sql_move_cash_template.replace('__TYPE__', action)
     sql = sql.replace('__TRANSACTION_ID__', str(transaction_id))
 
     if action == ActionType.BUY:
@@ -336,9 +316,8 @@ class CashEntryType:
     PURCHASE = "PURCHASE"
 
 def deposit(conn, amount):
-    sql_template = "INSERT INTO cash_balance (type, amount, date) VALUES ('__TYPE__', __AMOUNT__, '__DATE__')"
-
-    sql = sql_template.replace("__TYPE__", CashEntryType.BANK)
+    sql_deposit_template = sql_t.sql_deposit_template
+    sql = sql_deposit_template.replace("__TYPE__", CashEntryType.BANK)
     sql = sql.replace("__AMOUNT__", amount)
     sql = sql.replace("__DATE__", datetime.now().strftime("%Y-%m-%d"))
     # print(sql)
@@ -356,8 +335,8 @@ def deposit_screen(conn):
     screens.clear_screen()
 
 def get_cash_balance(conn):
-    sql = "SELECT SUM(amount) FROM cash_balance"
-    cursor = conn.execute(sql)
+    sql_get_cash_balance = sql_t.sql_get_cash_balance
+    cursor = conn.execute(sql_get_cash_balance)
     res = cursor.fetchone()
     if res[0] is None:
         return "0"
@@ -372,29 +351,9 @@ def format_activity(conn, row):
 
 def get_transactions_by_date(conn, date=None):
     if date is None:
-        sql_transactions_template = """
-        SELECT
-         cb.id, 
-         cb.type, 
-         cb.transaction_id, 
-         cb.amount, 
-         cb.date, 
-         sub.shares, 
-         sub.price, 
-         sub.trade_date, 
-         sub.ticker 
-         FROM 
-         cash_balance cb 
-         LEFT JOIN 
-            (
-                SELECT trs.id as trans_id, * 
-                FROM transactions trs, tickers tks 
-                WHERE trs.ticker_id = tks.id
-            ) sub
-        ON trans_id=transaction_id
-        ORDER BY cb.date DESC"""
+        sql_transactions_template = sql_t.sql_transactions_template
     else:
-        sql_transactions_template = "SELECT * from cash_balance cb LEFT JOIN transactions t ON cb.transaction_id = t.id where cb.date = '__TRADE_DATE__';"
+        raise Exception
     sql_today = sql_transactions_template.replace('__TRADE_DATE__', datetime.now().strftime("%Y-%m-%d"))
     return conn.execute(sql_today).fetchall()
 
@@ -435,50 +394,9 @@ def get_todays_activity(conn):
     screens.clear_screen()
 
 def get_portfolio(conn):
-    sql_open_positions = """
-    SELECT
-    ticker,
-    SUM(shares) 
-    FROM 
-    transactions tr,
-    tickers tk
-    WHERE 
-    tr.ticker_id = tk.id group by ticker
-    HAVING SUM(shares) > 0;"""
-
-    sql_last_prices = """
-    SELECT
-    ticker, 
-    price,
-    MAX(p.id) 
-    FROM prices p, 
-    tickers 
-    WHERE 
-    p.ticker_id = tickers.id 
-    GROUP BY p.ticker_id;
-    """
-
-    sql_get_second_last_prices_template = """
-    SELECT 
-    price, 
-    tickers.ticker, 
-    MAX(p.id) 
-    FROM prices p,
-    tickers
-    WHERE p.ticker_id = tickers.id
-    AND 
-    tickers.ticker = '__TICKER__'
-    AND
-    p.id < (
-        SELECT MAX(p.id)
-        FROM prices p,
-        tickers
-        WHERE p.ticker_id = tickers.id
-        AND 
-        tickers.ticker = '__TICKER__'); 
-    """
-
-
+    sql_open_positions = sql_t.sql_open_positions
+    sql_last_prices = sql_t.sql_last_prices
+    sql_get_second_last_prices_template = sql_t.sql_get_second_last_prices_template
     cursor = conn.execute(sql_open_positions)
     open_positions = cursor.fetchall()
     cursor = conn.execute(sql_last_prices)

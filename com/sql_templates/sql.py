@@ -54,3 +54,102 @@ sql_we_have_inventory_for_sale_template = """
         SELECT SUM(shares) from transactions where ticker_id = '__TICKER_ID__'
         GROUP BY shares;
         """
+
+sql_get_second_last_prices_template = """
+    SELECT 
+    price, 
+    tickers.ticker, 
+    MAX(p.id) 
+    FROM prices p,
+    tickers
+    WHERE p.ticker_id = tickers.id
+    AND 
+    tickers.ticker = '__TICKER__'
+    AND
+    p.id < (
+        SELECT MAX(p.id)
+        FROM prices p,
+        tickers
+        WHERE p.ticker_id = tickers.id
+        AND 
+        tickers.ticker = '__TICKER__'); 
+    """
+
+sql_last_prices = """
+    SELECT
+    ticker, 
+    price,
+    MAX(p.id) 
+    FROM prices p, 
+    tickers 
+    WHERE 
+    p.ticker_id = tickers.id 
+    GROUP BY p.ticker_id;
+    """
+
+sql_open_positions = """
+    SELECT
+    ticker,
+    SUM(shares) 
+    FROM 
+    transactions tr,
+    tickers tk
+    WHERE 
+    tr.ticker_id = tk.id group by ticker
+    HAVING SUM(shares) > 0;"""
+
+sql_transactions_template = """
+        SELECT
+         cb.id, 
+         cb.type, 
+         cb.transaction_id, 
+         cb.amount, 
+         cb.date, 
+         sub.shares, 
+         sub.price, 
+         sub.trade_date, 
+         sub.ticker 
+         FROM 
+         cash_balance cb 
+         LEFT JOIN 
+            (
+                SELECT trs.id as trans_id, * 
+                FROM transactions trs, tickers tks 
+                WHERE trs.ticker_id = tks.id
+            ) sub
+        ON trans_id=transaction_id
+        ORDER BY cb.date DESC"""
+
+sql_get_cash_balance = "SELECT SUM(amount) FROM cash_balance"
+
+sql_move_cash_template = """
+        INSERT INTO cash_balance
+        (type, transaction_id, amount)
+        VALUES
+        (
+            '__TYPE__',
+            __TRANSACTION_ID__,
+            __AMOUNT__
+        )
+    """
+
+sql_deposit_template = "INSERT INTO cash_balance (type, amount, date) VALUES ('__TYPE__', __AMOUNT__, '__DATE__')"
+
+sql_insert_into_prices_template = """
+    INSERT INTO prices 
+    (ticker_id, price_type_id, price, transaction_id)
+    values (
+    __TICKER_ID__,
+    __PRICE_TYPE_ID__,
+    __PRICE__,
+    __TRANSACTION_ID__ )
+    """
+
+sql_select_price_types_template = "SELECT id from price_types where name = '__NAME__'"
+
+sql_get_shares_balance_template = "SELECT SUM(shares) FROM transactions WHERE ticker_id = '__TICKER_ID__'"
+
+sql_get_inventory_template = """
+        SELECT SUM(shares) from transactions where ticker_id = '__TICKER_ID__'
+        GROUP BY shares;
+        """
