@@ -414,15 +414,69 @@ def format_activity(conn, row):
     s = f"Tran Id={row[0]} Ticker={ticker} {row[2]} @ {row[4]} {row[5]}"
     print(s)
 
+
+def get_transactions_by_date(conn, date=None):
+    if date is None:
+        sql_transactions_template = """
+        SELECT
+         cb.id, 
+         cb.type, 
+         cb.transaction_id, 
+         cb.amount, 
+         cb.date, 
+         sub.shares, 
+         sub.price, 
+         sub.trade_date, 
+         sub.ticker 
+         FROM 
+         cash_balance cb 
+         LEFT JOIN 
+            (
+                SELECT trs.id as trans_id, * 
+                FROM transactions trs, tickers tks 
+                WHERE trs.ticker_id = tks.id
+            ) sub
+        ON trans_id=transaction_id
+        ORDER BY cb.date DESC"""
+    else:
+        sql_transactions_template = "SELECT * from cash_balance cb LEFT JOIN transactions t ON cb.transaction_id = t.id where cb.date = '__TRADE_DATE__';"
+    sql_today = sql_transactions_template.replace('__TRADE_DATE__', datetime.now().strftime("%Y-%m-%d"))
+    return conn.execute(sql_today).fetchall()
+
+def ntb(item):
+    """None to blank"""
+    if item is None:
+        return ""
+    else:
+        return item
+
 def get_todays_activity(conn):
-    sql_template = "SELECT * FROM transactions where date(trade_date) = '__TRADE_DATE__'"
-    sql = sql_template.replace('__TRADE_DATE__', datetime.now().strftime("%Y-%m-%d"))
-    results = conn.execute(sql)
+    trans = get_transactions_by_date(conn)
+    # deposits = get_deposits_by_date(conn)
     screens.clear_screen()
     screens.print_activity_banner()
-    for row in results:
-        format_activity(conn, row)
-    input("[M]enu [E]xport total activity")
+    AMOUNT = 3
+    ID = 0
+    TYPE = 1
+    DATE = 4
+    TICKER = 8
+    SHARES = 5
+    PRICE = 6
+
+    print("")
+    header = "{:<12}{:<12}{:<12}{:<22}{:<12}{:<12}{:<12}".format("id", "type", "amount", "date", "ticker", "shares", "price")
+    print(header)
+    print("-" * 90)
+    for row in trans:
+        # print(row)
+        if row[TYPE] == "BANK":
+            _type = "DEPOSIT"
+        else:
+            _type = row[TYPE]
+        s ="{:<12}{:<12}{:<12}{:<22}{:<12}{:<12}{:<12}".format(row[ID], _type, row[AMOUNT], row[DATE], ntb(row[TICKER]), ntb(row[SHARES]), ntb(row[PRICE]))
+        print(s)
+        # format_activity(conn, row)
+    input("\r\n[M]enu [E]xport total activity")
     screens.clear_screen()
 
 def get_portfolio(conn):
