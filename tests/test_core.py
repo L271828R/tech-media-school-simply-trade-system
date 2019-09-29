@@ -22,10 +22,11 @@ def test_get_last_price_type_date_by_ticker(db_connection):
     VALUES (1, 33, '2019-05-01', 1)
     """)
     db_connection.commit()
-    price, price_type, date = get_last_price_type_date_by_ticker(db_connection, 'AAPL')
+    price, price_type, date, _id = get_last_price_type_date_id_by_ticker(db_connection, 'AAPL')
     assert price == 33
     assert price_type == 'FROM_SALE'
     assert date == '2019-05-01'
+    assert _id == 1
 
 
 def test_get_portfolio(db_connection):
