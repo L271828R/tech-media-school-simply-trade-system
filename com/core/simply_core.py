@@ -53,7 +53,7 @@ def get_last_price_type_date_id_by_ticker(conn, ticker):
 
 def enter_price_logic(conn, ticker):
     sql_price_insert_template = sql_t.sql_price_insert_template
-    sql_price_delete_template = sql_t.sql_price_insert_template
+    sql_price_delete_template = sql_t.sql_price_delete_template
 
     print("Ticker Chosen", ticker)
     price = input("enter price\r\n")
