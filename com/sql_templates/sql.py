@@ -59,15 +59,15 @@ sql_get_second_last_prices_template = """
     SELECT 
     price, 
     tickers.ticker, 
-    MAX(p.id) 
+    MAX(p.price_date) 
     FROM prices p,
     tickers
     WHERE p.ticker_id = tickers.id
     AND 
     tickers.ticker = '__TICKER__'
     AND
-    p.id < (
-        SELECT MAX(p.id)
+    p.price_date < (
+        SELECT MAX(p.price_date)
         FROM prices p,
         tickers
         WHERE p.ticker_id = tickers.id
@@ -79,7 +79,7 @@ sql_last_prices = """
     SELECT
     ticker, 
     price,
-    MAX(p.id) 
+    MAX(p.price_date) 
     FROM prices p, 
     tickers 
     WHERE 
