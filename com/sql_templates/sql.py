@@ -135,7 +135,7 @@ sql_move_cash_template = """
 
 sql_deposit_template = "INSERT INTO cash_balance (type, amount, date) VALUES ('__TYPE__', __AMOUNT__, '__DATE__')"
 
-sql_insert_into_prices_template = """
+sql_insert_into_prices_template_no_date = """
     INSERT INTO prices 
     (ticker_id, price_type_id, price, transaction_id)
     values (
@@ -144,6 +144,19 @@ sql_insert_into_prices_template = """
     __PRICE__,
     __TRANSACTION_ID__ )
     """
+
+sql_insert_into_prices_template_with_date = """
+    INSERT INTO prices 
+    (ticker_id, price_type_id, price, transaction_id, price_date)
+    values (
+    __TICKER_ID__,
+    __PRICE_TYPE_ID__,
+    __PRICE__,
+    __TRANSACTION_ID__,
+    '__PRICE_DATE__'
+     )
+    """
+
 
 sql_select_price_types_template = "SELECT id from price_types where name = '__NAME__'"
 

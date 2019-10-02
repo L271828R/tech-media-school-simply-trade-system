@@ -52,9 +52,6 @@ def get_last_price_type_date_id_by_ticker(conn, ticker):
     return result 
 
 def enter_price_logic(conn, ticker):
-    sql_price_insert_template = sql_t.sql_price_insert_template
-    sql_price_delete_template = sql_t.sql_price_delete_template
-
     print("Ticker Chosen", ticker)
     price = input("enter price\r\n")
     price_type = input("Enter Price Type: [E]OD [I]ntra-day\r\n").lower()
@@ -86,6 +83,11 @@ def enter_price_logic(conn, ticker):
     cursor = conn.execute(sql)
     price_type_id = cursor.fetchone()[0]
     ticker_id = get_ticker_id(conn, ticker)
+    execute_price(conn, date_to_use, price_type_id, ticker_id, price)
+
+def execute_price(conn, date_to_use, price_type_id, ticker_id, price):
+    sql_price_insert_template = sql_t.sql_price_insert_template
+    sql_price_delete_template = sql_t.sql_price_delete_template
 
     sql_delete = sql_price_delete_template.replace('__PRICE_DATE__', date_to_use)
     sql_delete = sql_delete.replace('__PRICE_TYPE_ID__', str(price_type_id))
@@ -232,11 +234,16 @@ def get_pricing_type(conn, action):
     result = cursor.fetchone()
     return result[0]
 
-def add_to_pricing_table(conn, action, price, ticker, transaction_id):
+def add_to_pricing_table(conn, action, price, ticker, transaction_id, date=None):
     ticker_id = get_ticker_id(conn, ticker)
     pricing_id = get_pricing_type(conn, action)
 
-    sql_insert_into_prices_template = sql_t.sql_insert_into_prices_template
+    if date is None:
+        sql_insert_into_prices_template = sql_t.sql_insert_into_prices_template_no_date
+    else:
+        sql_insert_into_prices_template = sql_t.sql_insert_into_prices_template_with_date
+        sql_insert_into_prices_template = sql_insert_into_prices_template.replace('__PRICE_DATE__', date)
+
     sql = sql_insert_into_prices_template.replace('__TICKER_ID__', ticker_id)
     sql = sql.replace('__TICKER_ID__', ticker_id)
     sql = sql.replace('__PRICE_TYPE_ID__', str(pricing_id))
@@ -265,7 +272,7 @@ def trade(conn, ticker, shares, price, action, date = None):
         date = datetime.now().strftime("%Y-%m-%d")
 
     transaction_id = insert_transaction(conn, ticker, shares, price, date, action)
-    add_to_pricing_table(conn, action, price, ticker, transaction_id) 
+    add_to_pricing_table(conn, action, price, ticker, transaction_id, date) 
     amount = shares * price
     move_cash(conn, amount, action, transaction_id)
     return True

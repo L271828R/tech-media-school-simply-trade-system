@@ -48,20 +48,39 @@ def test_get_portfolio_2buys(db_connection):
     price = 100
     shares = 1
     action = ActionType.BUY
-    trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action)
+    trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action, date='2019-03-02')
     # port = get_portfolio(db_connection)
     # expected = {'market_value': price * shares, 'price': price, 'price_prior': price, 'shares': 1, 'ticker': 'MU' }
     # assert expected ==  port[0]
     prior_price = 100
     price = 101
     added_shares = 1
-    trade(conn=db_connection, ticker=ticker, shares=added_shares, price=price, action=action)
+    # time.sleep(1)
+    trade(conn=db_connection, ticker=ticker, shares=added_shares, price=price, action=action, date='2019-03-03')
     port = get_portfolio(db_connection)
-    cursor = db_connection.execute("SELECT * FROM prices")
-    results_prices = cursor.fetchall()
     expected = {'market_value': (added_shares + shares) * price,
      'price': price,
      'price_prior': prior_price,
      'shares': added_shares + shares,
      'ticker': 'MU' }
+    assert expected == port[0]
+
+def test_buy_eod_portfolio(db_connection):
+    deposit(db_connection, '1000')
+    ticker = 'MU'
+    create_ticker(db_connection, ticker)
+    price = 100
+    shares = 1
+    action = ActionType.BUY
+    trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action, date='2019-02-05')
+    EOD = 3
+    ticker_id = get_ticker_id(db_connection, 'MU')
+    prior_price = '80'
+    execute_price(db_connection, '2019-02-04', EOD, ticker_id, prior_price)
+    port = get_portfolio(db_connection)
+    expected = {'market_value': (shares) * price,
+     'price': price,
+     'price_prior': float(prior_price),
+     'shares': shares,
+     'ticker': 'MU'} 
     assert expected == port[0]
