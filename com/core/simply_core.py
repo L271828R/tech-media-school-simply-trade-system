@@ -12,6 +12,9 @@ from ..tooling.tooling import enter_trade_action
 from ..tooling.tooling import parse_action
 from ..tooling.tooling import create_connection
 from com.sql_templates import sql as sql_t
+from datetime import datetime as dt
+
+
 
 def run(conf):
     conn = create_connection(conf)
@@ -39,7 +42,37 @@ def run(conf):
             elif ans == "5":
                 enter_prices(conn)
             elif ans == "6":
+                run_eod(conn)
+            elif ans == "7":
                 exit()
+
+
+def run_eod(conn):
+    print_banner("EOD Screen")
+    print("Enter date for EOD in YYYY-MM-DD format")
+    print("All open positions will have entered prices as EOD")
+    date_for_eod = None
+    while(True):
+        try:
+            ans = input("")
+            date_for_eod = dt.strptime(ans, "%Y-%m-%d")
+            break
+        except KeyboardInterrupt as err:
+            exit()
+        except Exception as err:
+            print(err)
+            print('-----')
+            print("Unexpected error:", sys.exc_info()[0])
+            print("please enter a valid date")
+
+    print(date_for_eod)
+    # TODO get open positions and make all dates and prices eod.
+    arr = get_list_of_open_positions_for_eod(conn)
+    for item in arr:
+        print(item)
+    input()
+
+
 
 def run_alerts(conn):
     print('Alerts')
@@ -103,22 +136,39 @@ def execute_price(conn, date_to_use, price_type_id, ticker_id, price):
     conn.commit()
 
 
+
+def print_banner(title="None"):
+    screens.clear_screen()
+    print("*" * 55)
+    print("***             Price Entry Screen              ***")
+    print("*" * 55)
+    print("")
+
+
+def get_list_of_open_positions_for_eod(conn):
+    portfolio = get_portfolio(conn)
+    arr = []
+    for i, row in enumerate(portfolio):
+        ticker = row['ticker']
+        last_price, price_type, date, _ = get_last_price_type_date_id_by_ticker(conn, ticker)
+        arr.append({'ticker': ticker, 'type':price_type, 'date': date})
+    return arr
+
+def print_open_prices(conn):
+    portfolio = get_portfolio(conn)
+    s = "{:<5}{:<10}{:<15}{:<10}{:<10}".format("#", "ticker", "last price", "source", "date")
+    print(s)
+    for i, row in enumerate(portfolio):
+        ticker = row['ticker']
+        last_price, price_type, date, _ = get_last_price_type_date_id_by_ticker(conn, ticker)
+        print(f"{i:<5}{ticker:<10}{last_price:<15}{price_type:<10}{date:<10}")
+    print("")
+    print("----------------------")
+
 def enter_prices(conn):
     while(True):
-        portfolio = get_portfolio(conn)
-        screens.clear_screen()
-        print("*" * 55)
-        print("***             Price Entry Screen              ***")
-        print("*" * 55)
-        print("")
-        s = "{:<5}{:<10}{:<15}{:<10}{:<10}".format("#", "ticker", "last price", "source", "date")
-        print(s)
-        for i, row in enumerate(portfolio):
-            ticker = row['ticker']
-            last_price, price_type, date, _ = get_last_price_type_date_id_by_ticker(conn, ticker)
-            print(f"{i:<5}{ticker:<10}{last_price:<15}{price_type:<10}{date:<10}")
-        print("")
-        print("----------------------")
+        print__banner("Price Entry")
+        print_open_prices(conn)
         ans = input("Enter number for ticker you want to enter prices for. [M]enu\r\n").lower()
         if ans == 'm':
             break
@@ -126,7 +176,6 @@ def enter_prices(conn):
             enter_price_logic(conn, portfolio[int(ans)]['ticker'])
         input("[ENTER]")
         screens.clear_screen()
-    
 
 # class NoInventoryError(Exception):
 #     pass

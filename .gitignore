@@ -5,3 +5,5 @@ __pycache__/
 *shared
 .cache*
 .pytest_cache
+*.swp
+tags

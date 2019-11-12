@@ -6,6 +6,7 @@ def clear_screen():
     else:
         os.system('clear')
 
+
 def print_not_enough_cash_screen(cash_bal, tran_amount):
             print("")
             print(f"You do not have enough cash ${float(cash_bal):,} for this transaction ${tran_amount:,}")
@@ -41,7 +42,8 @@ def print_options_screen(cash_bal, port_value):
     print("(3) Deposit Money")
     print("(4) Portfolio")
     print("(5) Enter Prices")
-    print("(6) Exit ")
+    print("(6) Run EOD")
+    print("(7) Exit ")
 
 
 def print_banner():
