@@ -70,8 +70,24 @@ def run_eod(conn):
     arr = get_list_of_open_positions_for_eod(conn)
     for item in arr:
         print(item)
+        ticker =item['ticker']
+        price, _type, _, _id = get_last_price_type_date_id_by_ticker(conn, ticker)
+        set_eod_for_ticker(conn, ticker, price, date_for_eod)
     input()
 
+def set_eod_for_ticker(conn, ticker, price,  date):
+    sdate = date.strftime('%Y-%m-%d')
+    # TAG
+    EOD_TYPE_ID = 3
+    ticker_id = get_ticker_id(conn, ticker)
+    sql_template = """ INSERT INTO prices (ticker_id, price, price_date, price_type_id) VALUES (__TICKER_ID__, __PRICE__, '__PRICE_DATE__', __PRICE_TYPE_ID__);"""
+    sql = sql_template.replace('__TICKER_ID__', ticker_id)
+    sql = sql.replace('__PRICE__', str(price))
+    sql = sql.replace('__PRICE_DATE__', sdate)
+    sql = sql.replace('__PRICE_TYPE_ID__', str(EOD_TYPE_ID))
+    print(sql)
+    conn.execute(sql)
+    conn.commit()
 
 
 def run_alerts(conn):
@@ -80,6 +96,7 @@ def run_alerts(conn):
 def get_last_price_type_date_id_by_ticker(conn, ticker):
     sql_template = sql_t.get_last_price_type_date_id_by_ticker
     sql = sql_template.replace('__TICKER__', ticker)
+    # print(' get last price =', sql)
     cursor = conn.execute(sql)
     result = cursor.fetchone()
     return result 
@@ -167,7 +184,7 @@ def print_open_prices(conn):
 
 def enter_prices(conn):
     while(True):
-        print__banner("Price Entry")
+        print_banner("Price Entry")
         print_open_prices(conn)
         ans = input("Enter number for ticker you want to enter prices for. [M]enu\r\n").lower()
         if ans == 'm':
@@ -254,7 +271,7 @@ def get_share_balance(conn, ticker):
         return 0
     else:
         return result[0]
-    
+
 def trade_validation(conn, action, shares, price, ticker, tran_amount):
     if action == ActionType.BUY:
         cash_bal = get_cash_balance(conn)

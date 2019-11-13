@@ -21,6 +21,11 @@ def test_get_last_price_type_date_by_ticker(db_connection):
     INSERT INTO prices (ticker_id, price, price_date, price_type_id)
     VALUES (1, 33, '2019-05-01', 1)
     """)
+    db_connection.execute("""
+    INSERT INTO prices (ticker_id, price, price_date, price_type_id)
+    VALUES (1, 44, '2019-04-01', 1)
+    """)
+
     db_connection.commit()
     price, price_type, date, _id = get_last_price_type_date_id_by_ticker(db_connection, 'AAPL')
     assert price == 33

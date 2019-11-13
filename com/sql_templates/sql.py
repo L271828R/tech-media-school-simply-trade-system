@@ -1,19 +1,19 @@
 
 get_last_price_type_date_id_by_ticker = """
-        SELECT price, price_types.name, price_date, MAX(p.id) FROM 
-        prices p, 
-        price_types, 
-        tickers 
-        where 
-        p.ticker_id = tickers.id 
-        and 
+        SELECT price, price_types.name, MAX(price_date) as price_date, p.id FROM
+        prices p,
+        price_types,
+        tickers
+        where
+        p.ticker_id = tickers.id
+        and
         price_type_id = price_types.id
-        and 
+        and
         tickers.ticker = '__TICKER__'
 """
 
 sql_price_insert_template = """
-    INSERT INTO prices 
+    INSERT INTO prices
     (price, ticker_id, price_date, price_type_id)
     VALUES(
     __PRICE__,
@@ -23,7 +23,7 @@ sql_price_insert_template = """
 """
 
 sql_price_delete_template = """
-    DELETE FROM prices 
+    DELETE FROM prices
     WHERE
     ticker_id = __TICKER_ID__
     AND
@@ -33,7 +33,7 @@ sql_price_delete_template = """
 """
 
 sql_transaction_id_template = """
-     SELECT max(id) FROM transactions WHERE 
+     SELECT max(id) FROM transactions WHERE
         ticker_id = '__TICKER_ID__' and
         shares = __SHARES__ and
         action = '__ACTION__' and
@@ -56,14 +56,14 @@ sql_we_have_inventory_for_sale_template = """
         """
 
 sql_get_second_last_prices_template = """
-    SELECT 
-    price, 
-    tickers.ticker, 
-    MAX(p.price_date) 
+    SELECT
+    price,
+    tickers.ticker,
+    MAX(p.price_date)
     FROM prices p,
     tickers
     WHERE p.ticker_id = tickers.id
-    AND 
+    AND
     tickers.ticker = '__TICKER__'
     AND
     p.price_date < (
@@ -71,50 +71,50 @@ sql_get_second_last_prices_template = """
         FROM prices p,
         tickers
         WHERE p.ticker_id = tickers.id
-        AND 
-        tickers.ticker = '__TICKER__'); 
+        AND
+        tickers.ticker = '__TICKER__');
     """
 
 sql_last_prices = """
     SELECT
-    ticker, 
+    ticker,
     price,
-    MAX(p.price_date) 
-    FROM prices p, 
-    tickers 
-    WHERE 
-    p.ticker_id = tickers.id 
+    MAX(p.price_date)
+    FROM prices p,
+    tickers
+    WHERE
+    p.ticker_id = tickers.id
     GROUP BY p.ticker_id;
     """
 
 sql_open_positions = """
     SELECT
     ticker,
-    SUM(shares) 
-    FROM 
+    SUM(shares)
+    FROM
     transactions tr,
     tickers tk
-    WHERE 
+    WHERE
     tr.ticker_id = tk.id group by ticker
     HAVING SUM(shares) > 0;"""
 
 sql_transactions_template = """
         SELECT
-         cb.id, 
-         cb.type, 
-         cb.transaction_id, 
-         cb.amount, 
-         cb.date, 
-         sub.shares, 
-         sub.price, 
-         sub.trade_date, 
-         sub.ticker 
-         FROM 
-         cash_balance cb 
-         LEFT JOIN 
+         cb.id,
+         cb.type,
+         cb.transaction_id,
+         cb.amount,
+         cb.date,
+         sub.shares,
+         sub.price,
+         sub.trade_date,
+         sub.ticker
+         FROM
+         cash_balance cb
+         LEFT JOIN
             (
-                SELECT trs.id as trans_id, * 
-                FROM transactions trs, tickers tks 
+                SELECT trs.id as trans_id, *
+                FROM transactions trs, tickers tks
                 WHERE trs.ticker_id = tks.id
             ) sub
         ON trans_id=transaction_id
@@ -136,7 +136,7 @@ sql_move_cash_template = """
 sql_deposit_template = "INSERT INTO cash_balance (type, amount, date) VALUES ('__TYPE__', __AMOUNT__, '__DATE__')"
 
 sql_insert_into_prices_template_no_date = """
-    INSERT INTO prices 
+    INSERT INTO prices
     (ticker_id, price_type_id, price, transaction_id)
     values (
     __TICKER_ID__,
@@ -146,7 +146,7 @@ sql_insert_into_prices_template_no_date = """
     """
 
 sql_insert_into_prices_template_with_date = """
-    INSERT INTO prices 
+    INSERT INTO prices
     (ticker_id, price_type_id, price, transaction_id, price_date)
     values (
     __TICKER_ID__,
