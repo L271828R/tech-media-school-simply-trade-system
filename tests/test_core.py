@@ -14,6 +14,65 @@ def test_sample():
     assert 1 == 1
 
 
+
+
+
+def test_transaction_buy_unknown_ticker(db_connection):
+    deposit(db_connection, '100')
+    conf = {}
+    conf['cash_validation'] = True
+    conf['is_prod'] = False
+    ticker = 'DOES_NOT_EXIST'
+    shares = 1
+    price = 1
+    action = ActionType.BUY
+    result = transaction(conn=db_connection, conf=conf, ticker=ticker, shares=shares, price=price, action=action)
+    result_ticker = db_connection.execute("SELECT * FROM tickers").fetchone()
+    assert result_ticker[1] == 'DOES_NOT_EXIST'
+    assert result == True
+
+
+def test_transaction_sell_unknown_ticker(db_connection):
+    deposit(db_connection, '100')
+    conf = {}
+    conf['cash_validation'] = True
+    conf['is_prod'] = False
+    ticker = 'DOES_NOT_EXIST'
+    shares = 1
+    price = 1
+    action = ActionType.SELL
+    result = transaction(conn=db_connection, conf=conf, ticker=ticker, shares=shares, price=price, action=action)
+    result_ticker = db_connection.execute("SELECT * FROM tickers").fetchone()
+    assert result_ticker[1] == 'DOES_NOT_EXIST'
+    assert result == False
+
+def test_transaction_sell_unknown_ticker_margin(db_connection):
+    deposit(db_connection, '100')
+    conf = {}
+    conf['cash_validation'] = False
+    conf['is_prod'] = False
+    ticker = 'DOES_NOT_EXIST'
+    shares = 1
+    price = 1
+    action = ActionType.SELL
+    result = transaction(conn=db_connection, conf=conf, ticker=ticker, shares=shares, price=price, action=action)
+    result_ticker = db_connection.execute("SELECT * FROM tickers").fetchone()
+    assert result_ticker[1] == 'DOES_NOT_EXIST'
+    assert result == False
+
+def test_cash_validation_off(db_connection):
+    deposit(db_connection, '0')
+    ticker = 'MU'
+    create_ticker(db_connection, ticker)
+    price = 33
+    shares = 1
+    action = ActionType.BUY
+    trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action)
+    port = get_portfolio(db_connection)
+    expected = {'market_value': 33, 'price': 33, 'price_prior': 33, 'shares': 1, 'ticker': 'MU' }
+
+
+
 def test_get_last_price_type_date_by_ticker(db_connection):
     db_connection.execute("INSERT INTO tickers (id, ticker) VALUES (1, 'AAPL')")
     db_connection.commit()

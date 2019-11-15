@@ -32,7 +32,7 @@ def run(conf):
             print("-------------------------------")
             ans = input(">> ")
             if ans == "1":
-                trade_screen(conn)
+                trade_screen(conn, conf)
             elif ans == "2":
                 get_todays_activity(conn)
             elif ans == "3":
@@ -183,6 +183,7 @@ def print_open_prices(conn):
     print("----------------------")
 
 def enter_prices(conn):
+    portfolio = get_portfolio(conn)
     while(True):
         print_banner("Price Entry")
         print_open_prices(conn)
@@ -258,7 +259,7 @@ def get_inventory(conn, ticker):
     cursor = conn.execute(sql)
     result = cursor.fetchone()
     if result is not None:
-        return result[0] 
+        return result[0]
     else:
         return "0"
 
@@ -272,18 +273,20 @@ def get_share_balance(conn, ticker):
     else:
         return result[0]
 
-def trade_validation(conn, action, shares, price, ticker, tran_amount):
+def trade_validation(conn, conf, action, shares, price, ticker, tran_amount):
     if action == ActionType.BUY:
         cash_bal = get_cash_balance(conn)
-        if float(cash_bal) - (shares * price) < 0:
-            screens.print_not_enough_cash_screen(cash_bal, tran_amount)
+        if conf['cash_validation'] == False:
+            return True
+        elif float(cash_bal) - (shares * price) < 0:
+            screens.print_not_enough_cash_screen(cash_bal, tran_amount, conf)
             return False
         else:
             return True
     elif action == ActionType.SELL:
         shares_bal = get_share_balance(conn, ticker)
         if shares_bal - shares < 0:
-            screens.print_not_enough_shares_screen(shares_bal, shares, ticker)
+            screens.print_not_enough_shares_screen(conf, shares_bal, shares, ticker)
             return False
         else:
             return True
@@ -343,23 +346,25 @@ def trade(conn, ticker, shares, price, action, date = None):
     move_cash(conn, amount, action, transaction_id)
     return True
 
-def transaction(conn, ticker, shares, price, action, date=datetime.now().strftime("%Y-%m-%d")):
+def transaction(conn, conf, ticker, shares, price, action, date=datetime.now().strftime("%Y-%m-%d")):
     tran_amount = round(shares * price, 2)
     screens.print_trade_preview(ticker, action, price, shares, tran_amount)
-    if not trade_validation(conn, action, shares, price, ticker, tran_amount):
+    if not does_symbol_exist(conn, ticker):
+        create_ticker(conn, ticker)
+    if not trade_validation(conn, conf, action, shares, price, ticker, tran_amount):
         screens.clear_screen()
         return False
     while(True):
-        ans = input("are you sure? ")
+        if conf['is_prod'] == True:
+            ans = input("are you sure? ")
+        else:
+            ans = 'y'
         if 'y' in ans:
-            if action == ActionType.BUY:
-                if not does_symbol_exist(conn, ticker):
-                    create_ticker(conn, ticker)
             return trade(conn, ticker, shares, price, action, date)
         if 'n' in ans:
             return False
 
-def trade_screen(conn):
+def trade_screen(conn, conf):
     while(True):
         ticker = input('please enter symbol ').upper()
         if ticker.isalpha():
@@ -367,18 +372,11 @@ def trade_screen(conn):
         else:
             print("")
             print("please enter letters only")
-    # ticker = 'SVXY'
-    # if not does_symbol_exist(conn, ticker):
-    #     ans = input('symbol ' + ticker + ' does not exist. create? y/n ')
-    #     if 'y' in ans.lower():
-    #         create_ticker(conn, ticker)
-    #     else:
-    #         exit()
     shares = int(input('please enter shares '))
     action = enter_trade_action("please enter [b]uy or [s]ell ", ActionType)
     price = float(input('please enter price '))
     action = parse_action(action, ActionType)
-    if transaction(conn, ticker, shares, price, action):
+    if transaction(conn, conf, ticker, shares, price, action):
         print("Trade Successful")
         input("[ENTER]")
         screens.clear_screen()

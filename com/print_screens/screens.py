@@ -7,12 +7,13 @@ def clear_screen():
         os.system('clear')
 
 
-def print_not_enough_cash_screen(cash_bal, tran_amount):
+def print_not_enough_cash_screen(cash_bal, tran_amount, conf):
             print("")
             print(f"You do not have enough cash ${float(cash_bal):,} for this transaction ${tran_amount:,}")
             print("")
             print("[ENTER]")
-            input()
+            if conf['is_prod'] == True:
+                input()
             clear_screen()
 
 def print_trade_preview(ticker, action, price, shares, tran_amount):
@@ -52,12 +53,13 @@ def print_banner():
     print(""" **  Welcome to simply trade v.09      **  """)
     print(" " + ("*" * 40))
 
-def print_not_enough_shares_screen(share_bal, shares, ticker):
+def print_not_enough_shares_screen(conf, share_bal, shares, ticker):
     print(f"You do not have enough shares {share_bal} to sell {shares} for {ticker}")
     print()
     print("[ENTER]")
     print()
-    input()
+    if conf['is_prod'] == True:
+        input()
 
 def print_activity_banner():
     print()

@@ -19,7 +19,7 @@ def get_ticker_id(conn, ticker):
     sql = sql_templte.replace('__TICKER__', ticker)
     result = conn.execute(sql)
     result = result.fetchone()
-    if result[1] == False:
+    if result[1] == False or result[1] is not None:
         raise Exception("This ticker has been deactivated")
     return str(result[0])
 
