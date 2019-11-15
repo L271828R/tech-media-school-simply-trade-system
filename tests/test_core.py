@@ -5,17 +5,30 @@ sys.path.append('..')
 sys.path.append('.')
 from com.tooling.tooling import *
 from com.core.simply_core import *
+from datetime import datetime as dt
 import pytest
 
+class PRICE_TYPE:
+    EOD = 3
 
+PRICE_TYPE_COLUMN = 4
+PRICE_DATE_COLUMN = 3
+TRANSACTION_ID_COLUMN = 5
 
-
-def test_sample():
-    assert 1 == 1
-
-
-
-
+def test_eod_screen(db_connection):
+    deposit(db_connection, '100')
+    ticker = 'MU'
+    create_ticker(db_connection, ticker)
+    price = 33
+    shares = 1
+    action = ActionType.BUY
+    date = dt.strptime('2019-04-01', '%Y-%m-%d')
+    trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action)
+    set_eod_for_ticker(conn=db_connection, ticker=ticker, price=price, date=date)
+    result = db_connection.execute("SELECT * FROM prices").fetchall()[1]
+    assert result[PRICE_TYPE_COLUMN] == PRICE_TYPE.EOD
+    assert result[PRICE_DATE_COLUMN] == '2019-04-01'
+    assert result[TRANSACTION_ID_COLUMN] == None
 
 def test_transaction_buy_unknown_ticker(db_connection):
     deposit(db_connection, '100')
@@ -30,7 +43,6 @@ def test_transaction_buy_unknown_ticker(db_connection):
     result_ticker = db_connection.execute("SELECT * FROM tickers").fetchone()
     assert result_ticker[1] == 'DOES_NOT_EXIST'
     assert result == True
-
 
 def test_transaction_sell_unknown_ticker(db_connection):
     deposit(db_connection, '100')
@@ -70,8 +82,6 @@ def test_cash_validation_off(db_connection):
     trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action)
     port = get_portfolio(db_connection)
     expected = {'market_value': 33, 'price': 33, 'price_prior': 33, 'shares': 1, 'ticker': 'MU' }
-
-
 
 def test_get_last_price_type_date_by_ticker(db_connection):
     db_connection.execute("INSERT INTO tickers (id, ticker) VALUES (1, 'AAPL')")
@@ -113,13 +123,9 @@ def test_get_portfolio_2buys(db_connection):
     shares = 1
     action = ActionType.BUY
     trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action, date='2019-03-02')
-    # port = get_portfolio(db_connection)
-    # expected = {'market_value': price * shares, 'price': price, 'price_prior': price, 'shares': 1, 'ticker': 'MU' }
-    # assert expected ==  port[0]
     prior_price = 100
     price = 101
     added_shares = 1
-    # time.sleep(1)
     trade(conn=db_connection, ticker=ticker, shares=added_shares, price=price, action=action, date='2019-03-03')
     port = get_portfolio(db_connection)
     expected = {'market_value': (added_shares + shares) * price,
@@ -146,5 +152,9 @@ def test_buy_eod_portfolio(db_connection):
      'price': price,
      'price_prior': float(prior_price),
      'shares': shares,
-     'ticker': 'MU'} 
+     'ticker': 'MU'}
     assert expected == port[0]
+
+
+
+

@@ -49,12 +49,14 @@ def run(conf):
 
 def run_eod(conn):
     print_banner("EOD Screen")
-    print("Enter date for EOD in YYYY-MM-DD format")
-    print("All open positions will have entered prices as EOD")
+    print("Enter date for EOD in YYYY-MM-DD format or E[x]it")
+    print("All open positions will have the entered date as EOD")
     date_for_eod = None
     while(True):
         try:
             ans = input("")
+            if ans == 'x' or ans == 'X':
+                return False
             date_for_eod = dt.strptime(ans, "%Y-%m-%d")
             break
         except KeyboardInterrupt as err:
@@ -74,6 +76,7 @@ def run_eod(conn):
         price, _type, _, _id = get_last_price_type_date_id_by_ticker(conn, ticker)
         set_eod_for_ticker(conn, ticker, price, date_for_eod)
     input()
+    return True
 
 def set_eod_for_ticker(conn, ticker, price,  date):
     sdate = date.strftime('%Y-%m-%d')
@@ -156,8 +159,12 @@ def execute_price(conn, date_to_use, price_type_id, ticker_id, price):
 
 def print_banner(title="None"):
     screens.clear_screen()
+    _padding = (20 - len(title))
+    padding = ""
+    if _padding > 0: 
+        padding = " " * _padding
     print("*" * 55)
-    print("***             Price Entry Screen              ***")
+    print(f"***               {title}{padding}              ***")
     print("*" * 55)
     print("")
 
