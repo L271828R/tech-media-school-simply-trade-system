@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime as dt
 from datetime import timedelta
 import os
 import sys
@@ -12,7 +12,6 @@ from ..tooling.tooling import enter_trade_action
 from ..tooling.tooling import parse_action
 from ..tooling.tooling import create_connection
 from com.sql_templates import sql as sql_t
-from datetime import datetime as dt
 
 
 
@@ -46,18 +45,33 @@ def run(conf):
             elif ans == "7":
                 exit()
 
+def get_highest_date_from_open_prices(arr):
+    dt_hightest = None
+    for i, item in enumerate(arr):
+        if i == 0:
+            dt_hightest = dt.strptime(item['date'], "%Y-%m-%d")
+        dt_temp = dt.strptime(item['date'], "%Y-%m-%d")
+        if dt_temp > dt_hightest:
+            dt_hightest = dt_temp
+    return dt_hightest
 
 def run_eod(conn):
     print_banner("EOD Screen")
-    print("Enter date for EOD in YYYY-MM-DD format or E[x]it")
+    open_prices = print_open_prices(conn)
+    dt_highest_date = get_highest_date_from_open_prices(open_prices)
+    str_highest_date = dt_highest_date.strftime('%Y-%m-%d')
+    print("Enter a future date for EOD in YYYY-MM-DD format or E[x]it")
     print("All open positions will have the entered date as EOD")
     date_for_eod = None
     while(True):
         try:
-            ans = input("")
+            ans = input(">>")
             if ans == 'x' or ans == 'X':
                 return False
             date_for_eod = dt.strptime(ans, "%Y-%m-%d")
+            dt_diff = date_for_eod - dt_highest_date 
+            if not dt_diff.days > 0:
+                raise Exception(f"{ans} needs to be bigger than {str_highest_date}")
             break
         except KeyboardInterrupt as err:
             exit()
@@ -108,7 +122,7 @@ def enter_price_logic(conn, ticker):
     print("Ticker Chosen", ticker)
     price = input("enter price\r\n")
     price_type = input("Enter Price Type: [E]OD [I]ntra-day\r\n").lower()
-    today_date = datetime.now()
+    today_date = dt.now()
     yesterday_date = today_date - timedelta(days=1)
     ans = input(f"""
     For which day?
@@ -182,12 +196,19 @@ def print_open_prices(conn):
     portfolio = get_portfolio(conn)
     s = "{:<5}{:<10}{:<15}{:<10}{:<10}".format("#", "ticker", "last price", "source", "date")
     print(s)
+    arr = []
     for i, row in enumerate(portfolio):
         ticker = row['ticker']
-        last_price, price_type, date, _ = get_last_price_type_date_id_by_ticker(conn, ticker)
+        last_price, price_type, date, id = get_last_price_type_date_id_by_ticker(conn, ticker)
+        arr.append({'ticker':ticker,
+         'last_price':last_price,
+         'price_type':price_type,
+         'id':id,
+         'date': date})
         print(f"{i:<5}{ticker:<10}{last_price:<15}{price_type:<10}{date:<10}")
     print("")
     print("----------------------")
+    return arr
 
 def enter_prices(conn):
     portfolio = get_portfolio(conn)
@@ -345,7 +366,7 @@ def move_cash(conn, amount, action, transaction_id):
 
 def trade(conn, ticker, shares, price, action, date = None):
     if date is None:
-        date = datetime.now().strftime("%Y-%m-%d")
+        date = dt.now().strftime("%Y-%m-%d")
 
     transaction_id = insert_transaction(conn, ticker, shares, price, date, action)
     add_to_pricing_table(conn, action, price, ticker, transaction_id, date) 
@@ -353,7 +374,7 @@ def trade(conn, ticker, shares, price, action, date = None):
     move_cash(conn, amount, action, transaction_id)
     return True
 
-def transaction(conn, conf, ticker, shares, price, action, date=datetime.now().strftime("%Y-%m-%d")):
+def transaction(conn, conf, ticker, shares, price, action, date=dt.now().strftime("%Y-%m-%d")):
     tran_amount = round(shares * price, 2)
     screens.print_trade_preview(ticker, action, price, shares, tran_amount)
     if not does_symbol_exist(conn, ticker):
@@ -397,7 +418,7 @@ def deposit(conn, amount):
     sql_deposit_template = sql_t.sql_deposit_template
     sql = sql_deposit_template.replace("__TYPE__", CashEntryType.BANK)
     sql = sql.replace("__AMOUNT__", amount)
-    sql = sql.replace("__DATE__", datetime.now().strftime("%Y-%m-%d"))
+    sql = sql.replace("__DATE__", dt.now().strftime("%Y-%m-%d"))
     # print(sql)
     conn.execute(sql)
     conn.commit()
@@ -432,7 +453,7 @@ def get_transactions_by_date(conn, date=None):
         sql_transactions_template = sql_t.sql_transactions_template
     else:
         raise Exception
-    sql_today = sql_transactions_template.replace('__TRADE_DATE__', datetime.now().strftime("%Y-%m-%d"))
+    sql_today = sql_transactions_template.replace('__TRADE_DATE__', dt.now().strftime("%Y-%m-%d"))
     return conn.execute(sql_today).fetchall()
 
 def ntb(item):
