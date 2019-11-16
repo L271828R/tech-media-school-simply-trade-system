@@ -50,7 +50,7 @@ def print_options_screen(cash_bal, port_value):
 def print_banner():
     print()
     print(" " + ("*" * 40))
-    print(""" **  Welcome to simply trade v.09      **  """)
+    print(""" **  Welcome to simply trade v, 1      **  """)
     print(" " + ("*" * 40))
 
 def print_not_enough_shares_screen(conf, share_bal, shares, ticker):

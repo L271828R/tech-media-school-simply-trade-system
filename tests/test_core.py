@@ -1,8 +1,5 @@
 import sqlite3
-# import tooling 
 import sys
-sys.path.append('..')
-sys.path.append('.')
 from com.tooling.tooling import *
 from com.core.simply_core import *
 from datetime import datetime as dt
