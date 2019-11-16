@@ -374,14 +374,20 @@ def transaction(conn, conf, ticker, shares, price, action, date=dt.now().strftim
 
 def trade_screen(conn, conf):
     while(True):
-        ticker = input('please enter symbol ').upper()
+        print("blank and enter to exit")
+        print("")
+        ticker = input('please enter symbol >> ').upper()
+        if ticker == "":
+            return False
         if ticker.isalnum():
             break
         else:
             print("")
             print("please enter letters only")
     while(True):
-        shares = input('please enter shares ')
+        shares = input('please enter shares >> ')
+        if shares == "":
+            return False
         if shares.isnumeric():
             shares = int(shares)
             break
@@ -389,9 +395,11 @@ def trade_screen(conn, conf):
             print("")
             print("Please enter a number")
 
-    action = enter_trade_action("please enter [b]uy or [s]ell ", ActionType)
+    action = enter_trade_action("please enter [b]uy or [s]ell >> ", ActionType)
     while(True):
-        price = input('please enter price ')
+        price = input('please enter price >> ')
+        if price == "":
+            return False
         try:
             price = float(price)
             break

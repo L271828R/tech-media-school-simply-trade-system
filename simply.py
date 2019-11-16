@@ -26,8 +26,6 @@ def run(conf):
             screens.print_options_screen(cash_balance, portfolio_value)
             print("")
             print("-------------------------------")
-            run_alerts(conn)
-            print("-------------------------------")
             ans = input(">> ")
             if ans == "1":
                 trade_screen(conn, conf)
