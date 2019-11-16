@@ -248,3 +248,74 @@ MSFT        2           $33         $66                 $0           0.0%
 ```
 
 
+# Entering prices
+
+If you would like to update your position with current prices. 
+This is the screen to do that.
+
+In the below screens with will update the price of MSFT
+from 33 to 44.
+
+```
+ ****************************************
+ **  Welcome to simply trade v, 1      **  
+ ****************************************
+ Market Value of Securities          $66
+ Cash Balance                       $934
+
+ Would you like to:
+
+(1) Trade 
+(2) Activity 
+(3) Deposit Money
+(4) Portfolio
+(5) Enter Prices
+(6) Run EOD
+(7) Exit 
+
+-------------------------------
+Alerts
+-------------------------------
+>> 5
+```
+
+```
+*******************************************************
+***               Price Entry                       ***
+*******************************************************
+
+#    ticker    last price     source    date      
+0    MSFT      33             FROM_BUY  2019-11-16
+
+----------------------
+Enter number for ticker you want to enter prices for. [M]enu
+0
+Ticker Chosen MSFT
+enter price
+44
+Enter Price Type: [E]OD [I]ntra-day
+I
+
+    For which day?
+    [1] 2019-11-16
+    [2] 2019-11-15
+
+    1
+[ENTER]
+```
+
+```
+*******************************************************
+***               Price Entry                       ***
+*******************************************************
+
+#    ticker    last price     source    date      
+0    MSFT      44             INTRA_DAY 2019-11-16 14:51:01
+
+----------------------
+Enter number for ticker you want to enter prices for. [M]enu
+```
+
+
+
+
