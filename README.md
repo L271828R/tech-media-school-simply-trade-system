@@ -83,9 +83,168 @@ Like a regular trading account. You will need to add funds
 to the account.
 
 
+```
+****************************************
+ **  Welcome to simply trade v, 1      **  
+ ****************************************
+ Market Value of Securities           $0
+ Cash Balance                         $0
+
+ Would you like to:
+
+(1) Trade 
+(2) Activity 
+(3) Deposit Money
+(4) Portfolio
+(5) Enter Prices
+(6) Run EOD
+(7) Exit 
+
+-------------------------------
+Alerts
+-------------------------------
+>> 3
+ How much would you like to deposit? 
+1000
+```
+Press Enter
+
+```
+ ****************************************
+ **  Welcome to simply trade v, 1      **  
+ ****************************************
+ Market Value of Securities           $0
+ Cash Balance                         $0
+
+ Would you like to:
+
+(1) Trade 
+(2) Activity 
+(3) Deposit Money
+(4) Portfolio
+(5) Enter Prices
+(6) Run EOD
+(7) Exit 
+
+-------------------------------
+Alerts
+-------------------------------
+>> 3
+ How much would you like to deposit? 
+1000
+Amount deposited
+[ENTER]
+```
+
+You are now ready for your first trade.
+
+```
+
+ ****************************************
+ **  Welcome to simply trade v, 1      **  
+ ****************************************
+ Market Value of Securities           $0
+ Cash Balance                     $1,000
+
+ Would you like to:
+
+(1) Trade 
+(2) Activity 
+(3) Deposit Money
+(4) Portfolio
+(5) Enter Prices
+(6) Run EOD
+(7) Exit 
+
+-------------------------------
+Alerts
+-------------------------------
+>> 
+```
+
+# First Trade
+
+```
+ ****************************************
+ **  Welcome to simply trade v, 1      **  
+ ****************************************
+ Market Value of Securities           $0
+ Cash Balance                     $1,000
+
+ Would you like to:
+
+(1) Trade 
+(2) Activity 
+(3) Deposit Money
+(4) Portfolio
+(5) Enter Prices
+(6) Run EOD
+(7) Exit 
+
+-------------------------------
+Alerts
+-------------------------------
+>> 1
+please enter symbol MSFT
+please enter shares 2
+please enter [b]uy or [s]ell b
+please enter price 33
+
+Trade MSFT BUY 2@33.0 = $66.0
+are you sure? y
+```
 
 
+# Activity Screen
 
+All deposit and trades will show up here.
 
+```
+**  Welcome to simply trade v, 1      **  
+ ****************************************
+ Market Value of Securities          $66
+ Cash Balance                       $934
+
+ Would you like to:
+
+(1) Trade 
+(2) Activity 
+(3) Deposit Money
+(4) Portfolio
+(5) Enter Prices
+(6) Run EOD
+(7) Exit 
+
+-------------------------------
+Alerts
+-------------------------------
+>> 2
+```
+
+```
+ ****************************************
+ **           Acivity Screen .        **  
+ ****************************************
+
+id          type        amount      date                  ticker      shares      price       
+------------------------------------------------------------------------------------------
+2           BUY         -66         2019-11-16 14:31:13   MSFT        2           33          
+1           DEPOSIT     1000        2019-11-16                                                
+
+[M]enu [E]xport total activity
+```
+
+# Portfolio Screen
+
+```
+TICKER      SHARES      PRICE       MARKET VALUE       CHANGE      PERCENT CHANGE
+--------------------------------------------------------------------------------
+MSFT        2           $33         $66                 $0           0.0%
+--------------------------------------------------------------------------------
+               portfolio value      $66
+
+[ENTER]
+
+```
 
 

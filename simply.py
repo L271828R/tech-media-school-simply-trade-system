@@ -48,7 +48,7 @@ if __name__ == '__main__':
     conf = {
             'db_location':"db/trade.db",
             'log_location':'logs',
-            'cash_validation':False,
+            'cash_validation':True,
             'is_prod':True
     }
 
