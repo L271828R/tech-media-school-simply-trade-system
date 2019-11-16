@@ -6,6 +6,7 @@ sys.path.append('.')
 from com.tooling.tooling import *
 from com.core.simply_core import *
 from datetime import datetime as dt
+from datetime import timedelta
 import pytest
 
 class PRICE_TYPE:
@@ -14,6 +15,26 @@ class PRICE_TYPE:
 PRICE_TYPE_COLUMN = 4
 PRICE_DATE_COLUMN = 3
 TRANSACTION_ID_COLUMN = 5
+
+
+def test_eod_date_is_in_future(db_connection):
+    conf = {}
+    conf['is_prod'] = False
+    dt_eod = dt.now()
+    dt_eod += timedelta(days=1)
+    str_eod = dt_eod.strftime('%Y-%m-%d')
+    conf['ans'] = str_eod
+    deposit(db_connection, '100')
+    ticker = 'MU'
+    create_ticker(db_connection, ticker)
+    price = 33
+    shares = 1
+    action = ActionType.BUY
+    trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action)
+    assert run_eod(db_connection, conf) == True
+    result = db_connection.execute("SELECT * FROM prices").fetchall()[1]
+    assert result[PRICE_DATE_COLUMN] == str_eod
+    assert result[PRICE_TYPE_COLUMN] == PRICE_TYPE.EOD
 
 def test_eod_screen(db_connection):
     deposit(db_connection, '100')

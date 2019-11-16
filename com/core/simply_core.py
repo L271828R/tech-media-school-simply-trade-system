@@ -41,7 +41,7 @@ def run(conf):
             elif ans == "5":
                 enter_prices(conn)
             elif ans == "6":
-                run_eod(conn)
+                run_eod(conn, conf)
             elif ans == "7":
                 exit()
 
@@ -55,32 +55,39 @@ def get_highest_date_from_open_prices(arr):
             dt_hightest = dt_temp
     return dt_hightest
 
-def run_eod(conn):
-    print_banner("EOD Screen")
-    open_prices = print_open_prices(conn)
+def eod_date_validation(open_prices, date_for_eod, ans):
     dt_highest_date = get_highest_date_from_open_prices(open_prices)
     str_highest_date = dt_highest_date.strftime('%Y-%m-%d')
+    date_for_eod = dt.strptime(ans, "%Y-%m-%d")
+    dt_diff = date_for_eod - dt_highest_date 
+    if not dt_diff.days > 0:
+        raise Exception(f"{ans} needs to be bigger than {str_highest_date}")
+    return True
+
+
+
+def run_eod(conn, conf):
+    print_banner("EOD Screen")
+    open_prices = print_open_prices(conn)
     print("Enter a future date for EOD in YYYY-MM-DD format or E[x]it")
     print("All open positions will have the entered date as EOD")
     date_for_eod = None
     while(True):
         try:
-            ans = input(">>")
+            if conf['is_prod'] == True:
+                ans = input(">>")
+            else:
+                ans = conf['ans']
+            date_for_eod = dt.strptime(ans, "%Y-%m-%d")
             if ans == 'x' or ans == 'X':
                 return False
-            date_for_eod = dt.strptime(ans, "%Y-%m-%d")
-            dt_diff = date_for_eod - dt_highest_date 
-            if not dt_diff.days > 0:
-                raise Exception(f"{ans} needs to be bigger than {str_highest_date}")
+            eod_date_validation(open_prices, date_for_eod, ans)
             break
         except KeyboardInterrupt as err:
             exit()
         except Exception as err:
             print(err)
-            print('-----')
-            print("Unexpected error:", sys.exc_info()[0])
             print("please enter a valid date")
-
     print(date_for_eod)
     # TODO get open positions and make all dates and prices eod.
     arr = get_list_of_open_positions_for_eod(conn)
@@ -89,7 +96,8 @@ def run_eod(conn):
         ticker =item['ticker']
         price, _type, _, _id = get_last_price_type_date_id_by_ticker(conn, ticker)
         set_eod_for_ticker(conn, ticker, price, date_for_eod)
-    input()
+    if conf['is_prod'] == True:
+        input()
     return True
 
 def set_eod_for_ticker(conn, ticker, price,  date):
