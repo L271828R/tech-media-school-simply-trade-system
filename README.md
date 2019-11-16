@@ -316,6 +316,40 @@ I
 Enter number for ticker you want to enter prices for. [M]enu
 ```
 
+# Selling shares
 
+Just as you are able to buy shares you can sell what you have in inventory.
+
+See the below screen:
+
+```
+****************************************
+ **  Welcome to simply trade v, 1      **  
+ ****************************************
+ Market Value of Securities          $88
+ Cash Balance                       $934
+
+ Would you like to:
+
+(1) Trade 
+(2) Activity 
+(3) Deposit Money
+(4) Portfolio
+(5) Enter Prices
+(6) Run EOD
+(7) Exit 
+
+-------------------------------
+Alerts
+-------------------------------
+>> 1
+please enter symbol MSFT
+please enter shares 1
+please enter [b]uy or [s]ell s
+please enter price 55
+
+Trade MSFT SELL 1@55.0 = $55.0
+are you sure? 
+```
 
 

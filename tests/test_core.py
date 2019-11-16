@@ -14,6 +14,31 @@ PRICE_DATE_COLUMN = 3
 TRANSACTION_ID_COLUMN = 5
 
 
+
+
+def test_price_of_sold_security_should_reflect_in_portfolio(db_connection):
+    conf = {}
+    conf['is_prod'] = False
+    dt_eod = dt.now()
+    dt_eod += timedelta(days=1)
+    str_eod = dt_eod.strftime('%Y-%m-%d')
+    conf['ans'] = str_eod
+    deposit(db_connection, '100')
+    ticker = 'MU'
+    create_ticker(db_connection, ticker)
+    price = 33
+    shares = 2
+    action = ActionType.BUY
+    trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action)
+    ticker = 'MU'
+    create_ticker(db_connection, ticker)
+    price = 44
+    shares = 1
+    action = ActionType.SELL
+    trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action)
+    portfolio = get_portfolio(db_connection)
+    print(portfolio)
+
 def test_eod_date_is_in_future(db_connection):
     conf = {}
     conf['is_prod'] = False

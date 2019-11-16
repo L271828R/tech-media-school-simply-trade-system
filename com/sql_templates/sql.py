@@ -38,7 +38,7 @@ sql_transaction_id_template = """
         shares = __SHARES__ and
         action = '__ACTION__' and
         price = __PRICE__ and
-        date(trade_date) = '__DATE__'
+        trade_date = '__DATE__'
     """
 
 sql_insert_transaction_template = """
@@ -86,7 +86,7 @@ sql_last_prices = """
     p.ticker_id = tickers.id
     GROUP BY p.ticker_id;
     """
-
+#     SELECT ticker, price, MAX(p.price_date) FROM prices p, tickers WHERE p.ticker_id = tickers.id GROUP BY p.ticker_id;
 sql_open_positions = """
     SELECT
     ticker,

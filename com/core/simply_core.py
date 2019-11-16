@@ -15,42 +15,14 @@ from com.sql_templates import sql as sql_t
 
 
 
-def run(conf):
-    conn = create_connection(conf)
 
-    with conn:
-        while(True):
-            screens.clear_screen()
-            portfolio_value = get_portfolio_value(conn)
-            cash_balance = get_cash_balance(conn)
-            screens.print_banner()
-            screens.print_options_screen(cash_balance, portfolio_value)
-            print("")
-            print("-------------------------------")
-            run_alerts(conn)
-            print("-------------------------------")
-            ans = input(">> ")
-            if ans == "1":
-                trade_screen(conn, conf)
-            elif ans == "2":
-                get_todays_activity(conn)
-            elif ans == "3":
-                deposit_screen(conn)
-            elif ans == "4":
-                portfolio_screen(conn)
-            elif ans == "5":
-                enter_prices(conn)
-            elif ans == "6":
-                run_eod(conn, conf)
-            elif ans == "7":
-                exit()
 
 def get_highest_date_from_open_prices(arr):
     dt_hightest = None
     for i, item in enumerate(arr):
         if i == 0:
-            dt_hightest = dt.strptime(item['date'], "%Y-%m-%d")
-        dt_temp = dt.strptime(item['date'], "%Y-%m-%d")
+            dt_hightest = dt.strptime(item['date'], "%Y-%m-%d %H:%M:%S")
+        dt_temp = dt.strptime(item['date'], "%Y-%m-%d %H:%M:%S")
         if dt_temp > dt_hightest:
             dt_hightest = dt_temp
     return dt_hightest
@@ -59,8 +31,7 @@ def eod_date_validation(open_prices, date_for_eod, ans):
     dt_highest_date = get_highest_date_from_open_prices(open_prices)
     str_highest_date = dt_highest_date.strftime('%Y-%m-%d')
     date_for_eod = dt.strptime(ans, "%Y-%m-%d")
-    dt_diff = date_for_eod - dt_highest_date 
-    if not dt_diff.days > 0:
+    if not date_for_eod > dt_highest_date:
         raise Exception(f"{ans} needs to be bigger than {str_highest_date}")
     return True
 
@@ -258,6 +229,7 @@ def get_transaction_id(conn, ticker, shares, price, date, action):
     cursor = conn.execute(sql_id)
     result = cursor.fetchone()
     return result[0]
+# "SELECT max(id) FROM transactions WHERE ticker_id = '1' and shares = 1 and action = 'BUY' and price = 33.0 and date(trade_date) = '2019-11-16 15:30:30'"
 
 def insert_transaction(conn, ticker, shares, price, date, action):
 
@@ -374,7 +346,7 @@ def move_cash(conn, amount, action, transaction_id):
 
 def trade(conn, ticker, shares, price, action, date = None):
     if date is None:
-        date = dt.now().strftime("%Y-%m-%d")
+        date = dt.now().strftime("%Y-%m-%d %H:%M:%S")
 
     transaction_id = insert_transaction(conn, ticker, shares, price, date, action)
     add_to_pricing_table(conn, action, price, ticker, transaction_id, date) 
@@ -382,7 +354,7 @@ def trade(conn, ticker, shares, price, action, date = None):
     move_cash(conn, amount, action, transaction_id)
     return True
 
-def transaction(conn, conf, ticker, shares, price, action, date=dt.now().strftime("%Y-%m-%d")):
+def transaction(conn, conf, ticker, shares, price, action, date=dt.now().strftime("%Y-%m-%d %H:%M:%S")):
     tran_amount = round(shares * price, 2)
     screens.print_trade_preview(ticker, action, price, shares, tran_amount)
     if not does_symbol_exist(conn, ticker):
