@@ -413,7 +413,7 @@ class CashEntryType:
 def deposit(conn, amount):
     sql_deposit_template = sql_t.sql_deposit_template
     sql = sql_deposit_template.replace("__TYPE__", CashEntryType.BANK)
-    sql = sql.replace("__AMOUNT__", amount)
+    sql = sql.replace("__AMOUNT__", str(amount))
     sql = sql.replace("__DATE__", dt.now().strftime("%Y-%m-%d"))
     # print(sql)
     conn.execute(sql)
@@ -423,8 +423,14 @@ def deposit(conn, amount):
 def deposit_screen(conn):
     print(" How much would you like to deposit? ")
     ans =input()
-    if ans.isnumeric():
-        deposit(conn, ans)
+    while(True):
+        try:
+            ans = float(ans)
+            break
+        except ValueError:
+            print("")
+            print("Please enter a number")
+    deposit(conn, ans)
     print("Amount deposited")
     input("[ENTER]")
     screens.clear_screen()
