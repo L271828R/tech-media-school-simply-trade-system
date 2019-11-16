@@ -5,12 +5,14 @@ from com.core.simply_core import *
 from datetime import datetime as dt
 from datetime import timedelta
 import pytest
+import time
 
 class PRICE_TYPE:
     EOD = 3
 
 PRICE_TYPE_COLUMN = 4
 PRICE_DATE_COLUMN = 3
+PRICE_COLUMN = 2
 TRANSACTION_ID_COLUMN = 5
 
 
@@ -30,6 +32,9 @@ def test_price_of_sold_security_should_reflect_in_portfolio(db_connection):
     shares = 2
     action = ActionType.BUY
     trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action)
+    portfolio = get_portfolio(db_connection)
+    assert portfolio[0]['price'] == 33
+    time.sleep(1)
     ticker = 'MU'
     create_ticker(db_connection, ticker)
     price = 44
@@ -37,7 +42,7 @@ def test_price_of_sold_security_should_reflect_in_portfolio(db_connection):
     action = ActionType.SELL
     trade(conn=db_connection, ticker=ticker, shares=shares, price=price, action=action)
     portfolio = get_portfolio(db_connection)
-    print(portfolio)
+    assert portfolio[0]['price'] == 44
 
 def test_eod_date_is_in_future(db_connection):
     conf = {}
