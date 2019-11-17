@@ -14,7 +14,7 @@ from ..tooling.tooling import create_connection
 from com.sql_templates import sql as sql_t
 from com.print_screens.screens import print_banner
 from com.core.price_lib import get_pricing_type, print_open_prices
-from com.core.simply_constants import ActionType
+from com.core.simply_constants import ActionType, CashEntryType
 from com.core.portfolio_libs import get_portfolio
 from com.core.portfolio_libs import get_portfolio_value
 
@@ -99,7 +99,6 @@ def get_transaction_id(conn, ticker, shares, price, date, action):
     cursor = conn.execute(sql_id)
     result = cursor.fetchone()
     return result[0]
-# "SELECT max(id) FROM transactions WHERE ticker_id = '1' and shares = 1 and action = 'BUY' and price = 33.0 and date(trade_date) = '2019-11-16 15:30:30'"
 
 def insert_transaction(conn, ticker, shares, price, date, action):
 
@@ -270,11 +269,6 @@ def trade_screen(conn, conf):
         print("Trade Successful")
         input("[ENTER]")
         screens.clear_screen()
-
-class CashEntryType:
-    BANK = "BANK"
-    SALE = "SALE"
-    PURCHASE = "PURCHASE"
 
 def deposit(conn, amount):
     sql_deposit_template = sql_t.sql_deposit_template
