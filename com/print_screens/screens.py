@@ -1,5 +1,18 @@
 import os
 
+
+
+def print_banner(title="None"):
+    clear_screen()
+    _padding = (20 - len(title))
+    padding = ""
+    if _padding > 0: 
+        padding = " " * _padding
+    print("*" * 55)
+    print(f"***               {title}{padding}              ***")
+    print("*" * 55)
+    print("")
+
 def clear_screen():
     if os.name == 'nt':
         os.system('cls')
@@ -47,7 +60,7 @@ def print_options_screen(cash_bal, port_value):
     print("(7) Exit ")
 
 
-def print_banner():
+def print_bannerx():
     print()
     print(" " + ("*" * 40))
     print(""" **  Welcome to simply trade v, 1      **  """)

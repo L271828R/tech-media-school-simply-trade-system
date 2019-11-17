@@ -6,6 +6,7 @@ from datetime import datetime as dt
 from datetime import timedelta
 import pytest
 import time
+from com.core.eod_lib import run_eod, set_eod_for_ticker
 
 class PRICE_TYPE:
     EOD = 3

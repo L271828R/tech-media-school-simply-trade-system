@@ -9,8 +9,8 @@ from com.core.simply_core import deposit_screen
 from com.core.simply_core import enter_prices
 from com.core.simply_core import get_todays_activity
 from com.core.simply_core import portfolio_screen
-from com.core.simply_core import run_eod
 from com.core.simply_core import trade_screen
+from com.core.eod_lib import run_eod
 
 
 
@@ -21,7 +21,7 @@ def run(conf):
             screens.clear_screen()
             portfolio_value = get_portfolio_value(conn)
             cash_balance = get_cash_balance(conn)
-            screens.print_banner()
+            screens.print_banner("Simply Trade v.1")
             screens.print_options_screen(cash_balance, portfolio_value)
             print("")
             print("-------------------------------")

@@ -13,79 +13,6 @@ from ..tooling.tooling import parse_action
 from ..tooling.tooling import create_connection
 from com.sql_templates import sql as sql_t
 
-
-
-
-
-def get_highest_date_from_open_prices(arr):
-    dt_hightest = None
-    for i, item in enumerate(arr):
-        if i == 0:
-            dt_hightest = dt.strptime(item['date'], "%Y-%m-%d %H:%M:%S")
-        dt_temp = dt.strptime(item['date'], "%Y-%m-%d %H:%M:%S")
-        if dt_temp > dt_hightest:
-            dt_hightest = dt_temp
-    return dt_hightest
-
-def eod_date_validation(open_prices, date_for_eod, ans):
-    dt_highest_date = get_highest_date_from_open_prices(open_prices)
-    str_highest_date = dt_highest_date.strftime('%Y-%m-%d')
-    date_for_eod = dt.strptime(ans, "%Y-%m-%d")
-    if not date_for_eod > dt_highest_date:
-        raise Exception(f"{ans} needs to be bigger than {str_highest_date}")
-    return True
-
-def eod_screen():
-    print("Enter a future date for EOD in YYYY-MM-DD format or E[x]it")
-    print("All open positions will have the entered date as EOD")
-    print_banner("EOD Screen")
-
-def run_eod(conn, conf):
-    eod_screen()
-    open_prices = print_open_prices(conn)
-    date_for_eod = None
-    while(True):
-        try:
-            if conf['is_prod'] == True:
-                ans = input(">> ")
-            else:
-                ans = conf['ans']
-            if ans == 'x' or ans == 'X':
-                return False
-            date_for_eod = dt.strptime(ans, "%Y-%m-%d")
-            eod_date_validation(open_prices, date_for_eod, ans)
-            break
-        except KeyboardInterrupt as err:
-            exit()
-        except Exception as err:
-            print(err)
-            print("please enter a valid date")
-    print(date_for_eod)
-    # TODO get open positions and make all dates and prices eod.
-    arr = get_list_of_open_positions_for_eod(conn)
-    for item in arr:
-        print(item)
-        ticker =item['ticker']
-        price, _type, _, _id = get_last_price_type_date_id_by_ticker(conn, ticker)
-        set_eod_for_ticker(conn, ticker, price, date_for_eod)
-    if conf['is_prod'] == True:
-        input()
-    return True
-
-def set_eod_for_ticker(conn, ticker, price,  date):
-    sdate = date.strftime('%Y-%m-%d')
-    # TAG
-    EOD_TYPE_ID = 3
-    ticker_id = get_ticker_id(conn, ticker)
-    sql_template = """ INSERT INTO prices (ticker_id, price, price_date, price_type_id) VALUES (__TICKER_ID__, __PRICE__, '__PRICE_DATE__', __PRICE_TYPE_ID__);"""
-    sql = sql_template.replace('__TICKER_ID__', ticker_id)
-    sql = sql.replace('__PRICE__', str(price))
-    sql = sql.replace('__PRICE_DATE__', sdate)
-    sql = sql.replace('__PRICE_TYPE_ID__', str(EOD_TYPE_ID))
-    print(sql)
-    conn.execute(sql)
-    conn.commit()
-
 def get_last_price_type_date_id_by_ticker(conn, ticker):
     sql_template = sql_t.get_last_price_type_date_id_by_ticker
     sql = sql_template.replace('__TICKER__', ticker)
@@ -143,29 +70,6 @@ def execute_price(conn, date_to_use, price_type_id, ticker_id, price):
     sql_insert = sql_insert.replace('__TICKER_ID__', ticker_id)
     conn.execute(sql_insert)
     conn.commit()
-
-
-
-def print_banner(title="None"):
-    screens.clear_screen()
-    _padding = (20 - len(title))
-    padding = ""
-    if _padding > 0: 
-        padding = " " * _padding
-    print("*" * 55)
-    print(f"***               {title}{padding}              ***")
-    print("*" * 55)
-    print("")
-
-
-def get_list_of_open_positions_for_eod(conn):
-    portfolio = get_portfolio(conn)
-    arr = []
-    for i, row in enumerate(portfolio):
-        ticker = row['ticker']
-        last_price, price_type, date, _ = get_last_price_type_date_id_by_ticker(conn, ticker)
-        arr.append({'ticker': ticker, 'type':price_type, 'date': date})
-    return arr
 
 def print_open_prices(conn):
     portfolio = get_portfolio(conn)
@@ -418,15 +322,20 @@ def deposit(conn, amount):
     return True
 
 def deposit_screen(conn):
-    print(" How much would you like to deposit? ")
-    ans =input()
     while(True):
         try:
+            print(" Blank and enter to exit")
+            print(" How much would you like to deposit? ")
+            ans =input(">> ")
+            if ans == "":
+                return False
             ans = float(ans)
             break
         except ValueError:
             print("")
             print("Please enter a number")
+            input()
+            screens.clear_screen()
     deposit(conn, ans)
     print("Amount deposited")
     input("[ENTER]")
