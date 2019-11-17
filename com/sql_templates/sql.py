@@ -118,7 +118,7 @@ sql_transactions_template = """
                 WHERE trs.ticker_id = tks.id
             ) sub
         ON trans_id=transaction_id
-        ORDER BY cb.date DESC"""
+        ORDER BY cb.id DESC"""
 
 sql_get_cash_balance = "SELECT SUM(amount) FROM cash_balance"
 

@@ -9,7 +9,6 @@ from com.core.simply_core import deposit_screen
 from com.core.simply_core import enter_prices
 from com.core.simply_core import get_todays_activity
 from com.core.simply_core import portfolio_screen
-from com.core.simply_core import run_alerts
 from com.core.simply_core import run_eod
 from com.core.simply_core import trade_screen
 
@@ -30,7 +29,7 @@ def run(conf):
             if ans == "1":
                 trade_screen(conn, conf)
             elif ans == "2":
-                get_todays_activity(conn)
+                get_todays_activity(conn, conf)
             elif ans == "3":
                 deposit_screen(conn)
             elif ans == "4":
@@ -46,6 +45,7 @@ if __name__ == '__main__':
     conf = {
             'db_location':"db/trade.db",
             'log_location':'logs',
+            'report_location':'reports/report.csv',
             'cash_validation':True,
             'is_prod':True
     }

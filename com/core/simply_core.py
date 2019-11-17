@@ -35,23 +35,24 @@ def eod_date_validation(open_prices, date_for_eod, ans):
         raise Exception(f"{ans} needs to be bigger than {str_highest_date}")
     return True
 
-
-
-def run_eod(conn, conf):
-    print_banner("EOD Screen")
-    open_prices = print_open_prices(conn)
+def eod_screen():
     print("Enter a future date for EOD in YYYY-MM-DD format or E[x]it")
     print("All open positions will have the entered date as EOD")
+    print_banner("EOD Screen")
+
+def run_eod(conn, conf):
+    eod_screen()
+    open_prices = print_open_prices(conn)
     date_for_eod = None
     while(True):
         try:
             if conf['is_prod'] == True:
-                ans = input(">>")
+                ans = input(">> ")
             else:
                 ans = conf['ans']
-            date_for_eod = dt.strptime(ans, "%Y-%m-%d")
             if ans == 'x' or ans == 'X':
                 return False
+            date_for_eod = dt.strptime(ans, "%Y-%m-%d")
             eod_date_validation(open_prices, date_for_eod, ans)
             break
         except KeyboardInterrupt as err:
@@ -85,14 +86,9 @@ def set_eod_for_ticker(conn, ticker, price,  date):
     conn.execute(sql)
     conn.commit()
 
-
-def run_alerts(conn):
-    print('Alerts')
-
 def get_last_price_type_date_id_by_ticker(conn, ticker):
     sql_template = sql_t.get_last_price_type_date_id_by_ticker
     sql = sql_template.replace('__TICKER__', ticker)
-    # print(' get last price =', sql)
     cursor = conn.execute(sql)
     result = cursor.fetchone()
     return result 
@@ -201,13 +197,6 @@ def enter_prices(conn):
             enter_price_logic(conn, portfolio[int(ans)]['ticker'])
         input("[ENTER]")
         screens.clear_screen()
-
-# class NoInventoryError(Exception):
-#     pass
-
-
-# class NotEnoughSharesException(Exception):
-#     pass
 
 class ActionType:
     BUY = 'BUY'
@@ -466,14 +455,14 @@ def get_transactions_by_date(conn, date=None):
     sql_today = sql_transactions_template.replace('__TRADE_DATE__', dt.now().strftime("%Y-%m-%d"))
     return conn.execute(sql_today).fetchall()
 
-def ntb(item):
+def cast_none_to_blank(item):
     """None to blank"""
     if item is None:
         return ""
     else:
         return item
 
-def get_todays_activity(conn):
+def get_todays_activity(conn, conf):
     trans = get_transactions_by_date(conn)
     # deposits = get_deposits_by_date(conn)
     screens.clear_screen()
@@ -490,16 +479,43 @@ def get_todays_activity(conn):
     header = "{:<12}{:<12}{:<12}{:<22}{:<12}{:<12}{:<12}".format("id", "type", "amount", "date", "ticker", "shares", "price")
     print(header)
     print("-" * 90)
+    arr = []
     for row in trans:
         # print(row)
         if row[TYPE] == "BANK":
             _type = "DEPOSIT"
         else:
             _type = row[TYPE]
-        s ="{:<12}{:<12}{:<12}{:<22}{:<12}{:<12}{:<12}".format(row[ID], _type, row[AMOUNT], row[DATE], ntb(row[TICKER]), ntb(row[SHARES]), ntb(row[PRICE]))
+        s = "{:<12}{:<12}{:<12}{:<22}{:<12}{:<12}{:<12}".format(
+                row[ID],
+                _type,
+                row[AMOUNT],
+                row[DATE],
+                cast_none_to_blank(row[TICKER]),
+                cast_none_to_blank(row[SHARES]),
+                cast_none_to_blank(row[PRICE]))
+
+        arr.append({
+           'id':row[ID],
+           'type': _type,
+           'amount':row[AMOUNT],
+           'date':row[DATE],
+           'ticker':cast_none_to_blank(row[TICKER]),
+           'shares':cast_none_to_blank(row[SHARES]),
+           'price':cast_none_to_blank(row[PRICE])})
+
         print(s)
         # format_activity(conn, row)
-    input("\r\n[M]enu [E]xport total activity")
+    ans = input("\r\n[M]enu [E]xport total activity >> ")
+    if ans == 'E' or ans == 'e':
+        import csv
+        headers = ['id', 'type', 'amount', 'date', 'ticker', 'shares', 'price']
+        with open(conf['report_location'], 'w') as f:
+            writer = csv.DictWriter(f, fieldnames=headers)
+            writer.writeheader()
+            writer.writerows(arr)
+            if conf['is_prod'] == True:
+                input(" exported ")
     screens.clear_screen()
 
 def get_portfolio(conn):
