@@ -1,6 +1,5 @@
 import sys
 import argparse
-# from com.core import simply_core
 from com.print_screens import screens
 from com.core.simply_core import create_connection
 from com.core.simply_core import get_portfolio_value
@@ -8,9 +7,10 @@ from com.core.simply_core import get_cash_balance
 from com.core.simply_core import deposit_screen
 from com.core.simply_core import enter_prices
 from com.core.simply_core import get_todays_activity
-from com.core.simply_core import portfolio_screen
 from com.core.simply_core import trade_screen
 from com.core.eod_lib import run_eod
+from com.core.portfolio_libs import get_portfolio
+from com.core.portfolio_libs import portfolio_screen
 
 
 

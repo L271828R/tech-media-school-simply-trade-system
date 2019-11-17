@@ -1,4 +1,6 @@
-from com.core.simply_core import get_last_price_type_date_id_by_ticker, get_portfolio, get_ticker_id, print_open_prices
+from com.core.price_lib import get_last_price_type_date_id_by_ticker 
+from com.core.portfolio_libs import get_portfolio
+from com.core.simply_core import get_ticker_id, print_open_prices
 from com.print_screens.screens import print_banner
 from datetime import datetime as dt
 

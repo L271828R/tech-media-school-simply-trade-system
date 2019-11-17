@@ -1,8 +1,8 @@
 import sqlite3
-from datetime import datetime as dt
-from datetime import timedelta
 import os
 import sys
+from datetime import datetime as dt
+from datetime import timedelta
 from ..print_screens import screens
 from ..tooling.tooling import create_ticker
 from ..tooling.tooling import get_ticker_from_id
@@ -12,13 +12,11 @@ from ..tooling.tooling import enter_trade_action
 from ..tooling.tooling import parse_action
 from ..tooling.tooling import create_connection
 from com.sql_templates import sql as sql_t
-
-def get_last_price_type_date_id_by_ticker(conn, ticker):
-    sql_template = sql_t.get_last_price_type_date_id_by_ticker
-    sql = sql_template.replace('__TICKER__', ticker)
-    cursor = conn.execute(sql)
-    result = cursor.fetchone()
-    return result 
+from com.print_screens.screens import print_banner
+from com.core.price_lib import get_pricing_type, print_open_prices
+from com.core.simply_constants import ActionType
+from com.core.portfolio_libs import get_portfolio
+from com.core.portfolio_libs import get_portfolio_value
 
 def enter_price_logic(conn, ticker):
     print("Ticker Chosen", ticker)
@@ -71,24 +69,6 @@ def execute_price(conn, date_to_use, price_type_id, ticker_id, price):
     conn.execute(sql_insert)
     conn.commit()
 
-def print_open_prices(conn):
-    portfolio = get_portfolio(conn)
-    s = "{:<5}{:<10}{:<15}{:<10}{:<10}".format("#", "ticker", "last price", "source", "date")
-    print(s)
-    arr = []
-    for i, row in enumerate(portfolio):
-        ticker = row['ticker']
-        last_price, price_type, date, id = get_last_price_type_date_id_by_ticker(conn, ticker)
-        arr.append({'ticker':ticker,
-         'last_price':last_price,
-         'price_type':price_type,
-         'id':id,
-         'date': date})
-        print(f"{i:<5}{ticker:<10}{last_price:<15}{price_type:<10}{date:<10}")
-    print("")
-    print("----------------------")
-    return arr
-
 def enter_prices(conn):
     portfolio = get_portfolio(conn)
     while(True):
@@ -102,9 +82,6 @@ def enter_prices(conn):
         input("[ENTER]")
         screens.clear_screen()
 
-class ActionType:
-    BUY = 'BUY'
-    SELL = 'SELL'
 
 def get_transaction_id(conn, ticker, shares, price, date, action):
     sql_transaction_id_template = sql_t.sql_transaction_id_template
@@ -191,18 +168,6 @@ def trade_validation(conn, conf, action, shares, price, ticker, tran_amount):
             return False
         else:
             return True
-
-def get_pricing_type(conn, action):
-    sql_select_price_types_template = sql_t.sql_select_price_types_template
-    sql = ""
-    if action == ActionType.BUY:
-        sql = sql_select_price_types_template.replace('__NAME__', "FROM_BUY")
-    elif action == ActionType.SELL:
-        sql = sql_select_price_types_template.replace('__NAME__', "FROM_SALE")
-
-    cursor = conn.execute(sql)
-    result = cursor.fetchone()
-    return result[0]
 
 def add_to_pricing_table(conn, action, price, ticker, transaction_id, date=None):
     ticker_id = get_ticker_id(conn, ticker)
@@ -426,42 +391,3 @@ def get_todays_activity(conn, conf):
             if conf['is_prod'] == True:
                 input(" exported ")
     screens.clear_screen()
-
-def get_portfolio(conn):
-    sql_open_positions = sql_t.sql_open_positions
-    sql_last_prices = sql_t.sql_last_prices
-    sql_get_second_last_prices_template = sql_t.sql_get_second_last_prices_template
-    cursor = conn.execute(sql_open_positions)
-    open_positions = cursor.fetchall()
-    cursor = conn.execute(sql_last_prices)
-    last_prices = cursor.fetchall()
-    TICKER = 0
-    SHARES = 1
-    PRICE  = 1
-    arr = []
-    for open_pos in open_positions:
-        sql = sql_get_second_last_prices_template.replace('__TICKER__', open_pos[TICKER])
-        cursor = conn.execute(sql)
-        price_prior = cursor.fetchone()[0]
-        for last_price in last_prices:
-            if open_pos[TICKER] == last_price[TICKER]:
-                price  = last_price[PRICE] 
-                if price_prior is None:
-                    price_prior = price
-                shares = open_pos[SHARES]
-                arr.append({
-                    'ticker': open_pos[TICKER],
-                    'shares': shares,
-                    'price': price,
-                    'price_prior': price_prior,
-                    'market_value': price * shares})
-    return arr
-
-def get_portfolio_value(conn):
-    port_items = get_portfolio(conn)
-    mv = sum([x['market_value'] for x in port_items])
-    return mv
-
-def portfolio_screen(conn):
-    portfolio = get_portfolio(conn)
-    screens.print_portfolio_screen(portfolio)
