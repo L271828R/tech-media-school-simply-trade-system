@@ -12,8 +12,6 @@ from com.core.eod_lib import run_eod
 from com.core.portfolio_libs import get_portfolio
 from com.core.portfolio_libs import portfolio_screen
 
-
-
 def run(conf):
     conn = create_connection(conf)
     with conn:
@@ -41,10 +39,10 @@ def run(conf):
             elif ans == "7":
                 exit()
 
+
 if __name__ == '__main__':
     conf = {
             'db_location':"db/trade.db",
-            'log_location':'logs',
             'report_location':'reports/report.csv',
             'cash_validation':True,
             'is_prod':True
